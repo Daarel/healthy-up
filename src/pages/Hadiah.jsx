@@ -1,5 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { 
+  Star, 
+  Flame, 
+  Crown, 
+  BadgeCheck, 
+  Gift, 
+  CheckCircle2, 
+  X,
+  ChevronRight
+} from "lucide-react";
 import Navbar from "../components/Navbar";
 
 export default function Hadiah() {
@@ -74,7 +84,7 @@ export default function Hadiah() {
             </div>
             <div className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-[#e5eeff] shadow-sm">
               <div className="w-10 h-10 bg-[#006e2f] rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-white">stars</span>
+                <Star className="w-5 h-5 text-white" />
               </div>
               <div>
                 <p className="text-xs text-[#6d7b6c] font-jakarta uppercase tracking-wide">Total Poin Kamu</p>
@@ -98,7 +108,7 @@ export default function Hadiah() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2 bg-orange-50 px-3 py-2 rounded-xl">
-                  <span className="material-symbols-outlined text-orange-500">local_fire_department</span>
+                  <Flame className="w-5 h-5 text-orange-500" />
                   <div>
                     <p className="text-lg font-bold text-orange-600 font-lexend">{streak}</p>
                     <p className="text-xs text-orange-500 font-jakarta">Hari Streak</p>
@@ -124,7 +134,7 @@ export default function Hadiah() {
             <div className="bg-gradient-to-br from-[#006e2f] to-[#22c55e] rounded-3xl p-6 text-white shadow-lg">
               <div className="flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-3">
-                  <span className="material-symbols-outlined text-3xl">workspace_premium</span>
+                  <Crown className="w-8 h-8" />
                 </div>
                 <h3 className="text-lg font-bold font-lexend">Lencana Elite</h3>
                 <p className="text-sm text-white/80 font-jakarta mt-1">
@@ -164,7 +174,7 @@ export default function Hadiah() {
                     <img src={voucher.image} alt={voucher.title} className="w-full h-full object-cover" />
                     {voucher.badge && (
                       <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-1">
-                        <span className="material-symbols-outlined text-xs text-[#006e2f]">verified</span>
+                        <BadgeCheck className="w-3 h-3 text-[#006e2f]" />
                         <span className="text-xs font-semibold text-[#006e2f] font-jakarta">{voucher.badge}</span>
                       </div>
                     )}
@@ -216,7 +226,7 @@ export default function Hadiah() {
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-[#e5eeff] rounded-xl flex items-center justify-center">
-                            <span className="material-symbols-outlined text-[#006e2f]">redeem</span>
+                            <Gift className="w-5 h-5 text-[#006e2f]" />
                           </div>
                           <div>
                             <p className="font-semibold text-[#191c20] font-jakarta">{item.voucher}</p>
@@ -234,7 +244,7 @@ export default function Hadiah() {
                             ? "bg-green-100 text-green-700" 
                             : "bg-gray-100 text-gray-600"
                         }`}>
-                          {item.status === "Berhasil" && <span className="material-symbols-outlined text-xs">check_circle</span>}
+                          {item.status === "Berhasil" && <CheckCircle2 className="w-3 h-3" />}
                           {item.status}
                         </span>
                       </td>
@@ -269,7 +279,7 @@ export default function Hadiah() {
                   onClick={closeRedeemModal}
                   className="w-10 h-10 rounded-xl bg-[#f8f9ff] flex items-center justify-center hover:bg-[#e5eeff] transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[#6d7b6c]">close</span>
+                  <X className="w-5 h-5 text-[#6d7b6c]" />
                 </button>
               </div>
               <div className="rounded-2xl overflow-hidden mb-4">

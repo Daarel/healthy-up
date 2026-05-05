@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
+import { Home, ClipboardList, Trophy, UserCircle, LogOut } from "lucide-react";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -29,7 +30,7 @@ export default function Navbar() {
                 : "text-[#6d7b6c] hover:bg-[#f8f9ff]"
             }`}
           >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
+            <Home className="w-5 h-5" fill={isActive("/dashboard") ? "currentColor" : "none"} />
             <span className="font-lexend text-[14px] leading-[20px] font-semibold tracking-[0.02em]">Beranda</span>
           </button>
           <button 
@@ -40,7 +41,7 @@ export default function Navbar() {
                 : "text-[#6d7b6c] hover:bg-[#f8f9ff]"
             }`}
           >
-            <span className="material-symbols-outlined">assignment</span>
+            <ClipboardList className="w-5 h-5" />
             <span className="font-lexend text-[14px] leading-[20px] font-semibold tracking-[0.02em]">Tugas</span>
           </button>
           <button 
@@ -51,7 +52,7 @@ export default function Navbar() {
                 : "text-[#6d7b6c] hover:bg-[#f8f9ff]"
             }`}
           >
-            <span className="material-symbols-outlined">emoji_events</span>
+            <Trophy className="w-5 h-5" />
             <span className="font-lexend text-[14px] leading-[20px] font-semibold tracking-[0.02em]">Hadiah</span>
           </button>
           <button 
@@ -62,7 +63,7 @@ export default function Navbar() {
                 : "text-[#6d7b6c] hover:bg-[#f8f9ff]"
             }`}
           >
-            <span className="material-symbols-outlined">account_circle</span>
+            <UserCircle className="w-5 h-5" />
             <span className="font-lexend text-[14px] leading-[20px] font-semibold tracking-[0.02em]">Profil</span>
           </button>
         </div>
@@ -72,7 +73,7 @@ export default function Navbar() {
             onClick={() => navigate("/onboarding/1")}
             className="w-full flex items-center gap-4 px-4 py-3 text-[#ba1a1a] hover:opacity-80 transition-opacity"
           >
-            <span className="material-symbols-outlined">logout</span>
+            <LogOut className="w-5 h-5" />
             <span className="font-lexend text-[14px] leading-[20px] font-semibold tracking-[0.02em]">Keluar</span>
           </button>
         </div>
@@ -85,28 +86,28 @@ export default function Navbar() {
             onClick={() => navigate("/dashboard")}
             className={`flex flex-col items-center gap-1 ${isActive("/dashboard") ? "text-[#006e2f]" : "text-[#6d7b6c]"}`}
           >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
+            <Home className="w-6 h-6" fill={isActive("/dashboard") ? "currentColor" : "none"} />
             <span className="text-[10px] font-medium">Beranda</span>
           </button>
           <button 
             onClick={() => navigate("/tugas")}
             className={`flex flex-col items-center gap-1 ${isActive("/tugas") ? "text-[#006e2f]" : "text-[#6d7b6c]"}`}
           >
-            <span className="material-symbols-outlined">assignment</span>
+            <ClipboardList className="w-6 h-6" />
             <span className="text-[10px] font-medium">Tugas</span>
           </button>
           <button 
             onClick={() => navigate("/hadiah")}
             className={`flex flex-col items-center gap-1 ${isActive("/hadiah") ? "text-[#006e2f]" : "text-[#6d7b6c]"}`}
           >
-            <span className="material-symbols-outlined">emoji_events</span>
+            <Trophy className="w-6 h-6" />
             <span className="text-[10px] font-medium">Hadiah</span>
           </button>
           <button 
             onClick={() => navigate("/profil")}
             className={`flex flex-col items-center gap-1 ${isActive("/profil") ? "text-[#006e2f]" : "text-[#6d7b6c]"}`}
           >
-            <span className="material-symbols-outlined">account_circle</span>
+            <UserCircle className="w-6 h-6" />
             <span className="text-[10px] font-medium">Profil</span>
           </button>
         </div>

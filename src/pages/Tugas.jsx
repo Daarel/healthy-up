@@ -1,5 +1,25 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { 
+  CheckCircle2, 
+  Clock, 
+  Star, 
+  CalendarDays, 
+  Trophy, 
+  Flame,
+  Upload,
+  Eye,
+  Circle,
+  Inbox,
+  HelpCircle,
+  X,
+  CloudUpload,
+  BookOpen,
+  Camera,
+  Video,
+  Lightbulb,
+  Info
+} from "lucide-react";
 import Navbar from "../components/Navbar";
 
 export default function Tugas() {
@@ -14,21 +34,21 @@ export default function Tugas() {
 
   const tasks = {
     "hari-ini": [
-      { id: 1, title: "Minum air 8 gelas", category: "Hidrasi", completed: true, icon: "water_drop", points: 10 },
-      { id: 2, title: "Makan sayur 3 porsi", category: "Nutrisi", completed: false, icon: "nutrition", points: 15 },
-      { id: 3, title: "Jalan kaki 30 menit", category: "Olahraga", completed: false, icon: "directions_walk", points: 20 },
-      { id: 4, title: "Tidur 8 jam", category: "Istirahat", completed: false, icon: "bedtime", points: 10 },
-      { id: 5, title: "Makan protein tinggi", category: "Nutrisi", completed: false, icon: "restaurant", points: 15 },
-      { id: 6, title: "Stretching pagi", category: "Olahraga", completed: true, icon: "self_improvement", points: 10 },
+      { id: 1, title: "Minum air 8 gelas", category: "Hidrasi", completed: true, icon: "droplets", points: 10 },
+      { id: 2, title: "Makan sayur 3 porsi", category: "Nutrisi", completed: false, icon: "apple", points: 15 },
+      { id: 3, title: "Jalan kaki 30 menit", category: "Olahraga", completed: false, icon: "footprints", points: 20 },
+      { id: 4, title: "Tidur 8 jam", category: "Istirahat", completed: false, icon: "moon", points: 10 },
+      { id: 5, title: "Makan protein tinggi", category: "Nutrisi", completed: false, icon: "utensils", points: 15 },
+      { id: 6, title: "Stretching pagi", category: "Olahraga", completed: true, icon: "activity", points: 10 },
     ],
     "minggu-ini": [
-      { id: 7, title: "Workout 4x seminggu", category: "Olahraga", completed: false, icon: "fitness_center", points: 50 },
-      { id: 8, title: "Tidur teratur 7 hari", category: "Istirahat", completed: false, icon: "schedule", points: 30 },
-      { id: 9, title: "Minum air cukup 7 hari", category: "Hidrasi", completed: true, icon: "water_drop", points: 40 },
+      { id: 7, title: "Workout 4x seminggu", category: "Olahraga", completed: false, icon: "dumbbell", points: 50 },
+      { id: 8, title: "Tidur teratur 7 hari", category: "Istirahat", completed: false, icon: "clock", points: 30 },
+      { id: 9, title: "Minum air cukup 7 hari", category: "Hidrasi", completed: true, icon: "droplets", points: 40 },
     ],
     "tantangan": [
-      { id: 10, title: "Turun 1kg minggu ini", category: "Tantangan", completed: false, icon: "emoji_events", points: 100 },
-      { id: 11, title: "Olahraga 30 hari berturut-turut", category: "Tantangan", completed: false, icon: "local_fire_department", points: 200 },
+      { id: 10, title: "Turun 1kg minggu ini", category: "Tantangan", completed: false, icon: "trophy", points: 100 },
+      { id: 11, title: "Olahraga 30 hari berturut-turut", category: "Tantangan", completed: false, icon: "flame", points: 200 },
     ],
   };
 
@@ -129,7 +149,7 @@ export default function Tugas() {
             <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                  <span className="material-symbols-outlined text-[#006e2f]">check_circle</span>
+                  <CheckCircle2 className="w-5 h-5 text-[#006e2f]" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-[#191c20] font-lexend">{completedCount}</p>
@@ -140,7 +160,7 @@ export default function Tugas() {
             <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                  <span className="material-symbols-outlined text-orange-500">pending</span>
+                  <Clock className="w-5 h-5 text-orange-500" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-[#191c20] font-lexend">{currentTasks.length - completedCount}</p>
@@ -151,7 +171,7 @@ export default function Tugas() {
             <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                  <span className="material-symbols-outlined text-purple-500">stars</span>
+                  <Star className="w-5 h-5 text-purple-500" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-[#191c20] font-lexend">{totalPoints}</p>
@@ -164,9 +184,9 @@ export default function Tugas() {
           {/* Tabs */}
           <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
             {[
-              { id: "hari-ini", label: "Hari Ini", icon: "today" },
-              { id: "minggu-ini", label: "Minggu Ini", icon: "date_range" },
-              { id: "tantangan", label: "Tantangan", icon: "emoji_events" },
+              { id: "hari-ini", label: "Hari Ini", Icon: CalendarDays },
+              { id: "minggu-ini", label: "Minggu Ini", Icon: CalendarDays },
+              { id: "tantangan", label: "Tantangan", Icon: Trophy },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -177,7 +197,7 @@ export default function Tugas() {
                     : "bg-white text-[#6d7b6c] hover:bg-[#e5eeff]"
                 }`}
               >
-                <span className="material-symbols-outlined">{tab.icon}</span>
+                <tab.Icon className="w-5 h-5" />
                 {tab.label}
               </button>
             ))}
@@ -199,12 +219,11 @@ export default function Tugas() {
                       : "bg-[#e5eeff] text-[#6d7b6c] hover:bg-[#dce9ff]"
                   }`}
                 >
-                  <span
-                    className="material-symbols-outlined"
-                    style={{ fontVariationSettings: task.completed ? "'FILL' 1" : "" }}
-                  >
-                    {task.completed ? "check" : task.icon}
-                  </span>
+                  {task.completed ? (
+                    <CheckCircle2 className="w-6 h-6" />
+                  ) : (
+                    <Star className="w-6 h-6" />
+                  )}
                 </button>
                 <div className="flex-1">
                   <p
@@ -217,7 +236,7 @@ export default function Tugas() {
                   <p className="text-sm text-[#6d7b6c] font-jakarta">{task.category}</p>
                   {hasProof(task.id) && (
                     <div className="flex items-center gap-1 mt-1">
-                      <span className="material-symbols-outlined text-xs text-green-500">check_circle</span>
+                      <CheckCircle2 className="w-4 h-4 text-green-500" />
                       <span className="text-xs text-green-600 font-jakarta">
                         {uploadedProofs[task.id].media.length} bukti diupload
                       </span>
@@ -226,7 +245,7 @@ export default function Tugas() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1 bg-yellow-50 px-3 py-1 rounded-full">
-                    <span className="material-symbols-outlined text-yellow-500 text-sm">stars</span>
+                    <Star className="w-4 h-4 text-yellow-500" />
                     <span className="text-sm font-semibold text-yellow-700 font-lexend">+{task.points}</span>
                   </div>
                   
@@ -239,20 +258,19 @@ export default function Tugas() {
                         : "bg-[#006e2f] text-white hover:bg-[#005823]"
                     }`}
                   >
-                    <span className="material-symbols-outlined text-sm">
-                      {hasProof(task.id) ? "visibility" : "upload"}
-                    </span>
+                    {hasProof(task.id) ? (
+                      <Eye className="w-4 h-4" />
+                    ) : (
+                      <Upload className="w-4 h-4" />
+                    )}
                     {hasProof(task.id) ? "Lihat" : "Upload"}
                   </button>
                   
-                  <span
-                    className={`material-symbols-outlined ${
-                      task.completed ? "text-[#006e2f]" : "text-[#c1c9bf]"
-                    }`}
-                    style={{ fontVariationSettings: task.completed ? "'FILL' 1" : "" }}
-                  >
-                    {task.completed ? "check_circle" : "radio_button_unchecked"}
-                  </span>
+                  {task.completed ? (
+                    <CheckCircle2 className="w-6 h-6 text-[#006e2f]" />
+                  ) : (
+                    <Circle className="w-6 h-6 text-[#c1c9bf]" />
+                  )}
                 </div>
               </div>
             ))}
@@ -261,7 +279,7 @@ export default function Tugas() {
           {/* Empty State */}
           {currentTasks.length === 0 && (
             <div className="text-center py-12">
-              <span className="material-symbols-outlined text-6xl text-[#c1c9bf] mb-4">inbox</span>
+              <Inbox className="w-16 h-16 text-[#c1c9bf] mx-auto mb-4" />
               <p className="text-[#6d7b6c] font-jakarta">Tidak ada tugas di kategori ini</p>
             </div>
           )}
@@ -287,7 +305,7 @@ export default function Tugas() {
                     className="flex items-center gap-1 px-3 py-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-sm font-medium font-jakarta"
                     title="Lihat Panduan Upload"
                   >
-                    <span className="material-symbols-outlined text-sm">help_outline</span>
+                    <HelpCircle className="w-4 h-4" />
                     Panduan
                   </button>
                 )}
@@ -295,7 +313,7 @@ export default function Tugas() {
                   onClick={closeUploadModal}
                   className="w-10 h-10 rounded-xl bg-[#f8f9ff] flex items-center justify-center hover:bg-[#e5eeff] transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[#6d7b6c]">close</span>
+                  <X className="w-5 h-5 text-[#6d7b6c]" />
                 </button>
               </div>
             </div>
@@ -323,7 +341,7 @@ export default function Tugas() {
                     </div>
                   )}
                   <div className="flex items-center gap-2 text-sm text-[#6d7b6c] font-jakarta">
-                    <span className="material-symbols-outlined text-sm">schedule</span>
+                    <Clock className="w-4 h-4" />
                     Diupload pada {uploadedProofs[selectedTask.id].timestamp}
                   </div>
                   <button
@@ -360,7 +378,7 @@ export default function Tugas() {
                               onClick={() => removeMedia(item.id)}
                               className="absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
                             >
-                              <span className="material-symbols-outlined text-xs">close</span>
+                              <X className="w-4 h-4" />
                             </button>
                           </div>
                         ))}
@@ -368,7 +386,7 @@ export default function Tugas() {
                     )}
                     
                     <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#c1c9bf] rounded-2xl bg-[#f8f9ff] cursor-pointer hover:border-[#006e2f] hover:bg-green-50 transition-colors">
-                      <span className="material-symbols-outlined text-4xl text-[#6d7b6c] mb-2">cloud_upload</span>
+                      <CloudUpload className="w-10 h-10 text-[#6d7b6c] mb-2" />
                       <p className="text-sm text-[#6d7b6c] font-jakarta">Klik untuk upload foto/video</p>
                       <p className="text-xs text-[#9ca3af] font-jakarta mt-1">Bisa pilih lebih dari 1 file</p>
                       <input
@@ -405,7 +423,7 @@ export default function Tugas() {
                         : "bg-[#e5eeff] text-[#6d7b6c] cursor-not-allowed"
                     }`}
                   >
-                    <span className="material-symbols-outlined">check</span>
+                    <CheckCircle2 className="w-5 h-5" />
                     Kirim Bukti ({previewMedia.length} file)
                   </button>
                 </div>
@@ -423,7 +441,7 @@ export default function Tugas() {
             <div className="flex items-center justify-between p-6 border-b border-[#e5eeff]">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <span className="material-symbols-outlined text-blue-600">menu_book</span>
+                  <BookOpen className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-[#191c20] font-lexend">Panduan Upload Bukti</h3>
@@ -434,7 +452,7 @@ export default function Tugas() {
                 onClick={closeGuideModal}
                 className="w-10 h-10 rounded-xl bg-[#f8f9ff] flex items-center justify-center hover:bg-[#e5eeff] transition-colors"
               >
-                <span className="material-symbols-outlined text-[#6d7b6c]">close</span>
+                <X className="w-5 h-5 text-[#6d7b6c]" />
               </button>
             </div>
 
@@ -443,24 +461,24 @@ export default function Tugas() {
               {/* Panduan Foto */}
               <div className="bg-green-50 rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="material-symbols-outlined text-green-600">photo_camera</span>
+                  <Camera className="w-5 h-5 text-green-600" />
                   <h4 className="font-bold text-green-800 font-lexend">Panduan Foto</h4>
                 </div>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-green-600 text-sm mt-0.5">check_circle</span>
+                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
                     <span className="text-sm text-green-800 font-jakarta">Pastikan pencahayaan cukup terang, hindari backlight</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-green-600 text-sm mt-0.5">check_circle</span>
+                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
                     <span className="text-sm text-green-800 font-jakarta">Foto dari sudut yang jelas dan tidak blur</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-green-600 text-sm mt-0.5">check_circle</span>
+                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
                     <span className="text-sm text-green-800 font-jakarta">Objek utama berada di tengah frame</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-green-600 text-sm mt-0.5">check_circle</span>
+                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
                     <span className="text-sm text-green-800 font-jakarta">Resolusi minimal 720p agar detail terlihat</span>
                   </li>
                 </ul>
@@ -469,20 +487,20 @@ export default function Tugas() {
               {/* Panduan Video */}
               <div className="bg-purple-50 rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="material-symbols-outlined text-purple-600">videocam</span>
+                  <Video className="w-5 h-5 text-purple-600" />
                   <h4 className="font-bold text-purple-800 font-lexend">Panduan Video</h4>
                 </div>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-purple-600 text-sm mt-0.5">check_circle</span>
+                    <CheckCircle2 className="w-4 h-4 text-purple-600 mt-0.5" />
                     <span className="text-sm text-purple-800 font-jakarta">Durasi minimal 10 detik, maksimal 60 detik</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-purple-600 text-sm mt-0.5">check_circle</span>
+                    <CheckCircle2 className="w-4 h-4 text-purple-600 mt-0.5" />
                     <span className="text-sm text-purple-800 font-jakarta">Rekam dengan posisi landscape (horizontal)</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-purple-600 text-sm mt-0.5">check_circle</span>
+                    <CheckCircle2 className="w-4 h-4 text-purple-600 mt-0.5" />
                     <span className="text-sm text-purple-800 font-jakarta">Pastikan suara dan gerakan terlihat jelas</span>
                   </li>
                 </ul>
@@ -491,16 +509,16 @@ export default function Tugas() {
               {/* Tips */}
               <div className="bg-blue-50 rounded-2xl p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <span className="material-symbols-outlined text-blue-600">lightbulb</span>
+                  <Lightbulb className="w-5 h-5 text-blue-600" />
                   <h4 className="font-bold text-blue-800 font-lexend">Tips Tambahan</h4>
                 </div>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-blue-600 text-sm mt-0.5">info</span>
+                    <Info className="w-4 h-4 text-blue-600 mt-0.5" />
                     <span className="text-sm text-blue-800 font-jakarta">Bisa upload lebih dari 1 foto/video untuk bukti yang lebih kuat</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <span className="material-symbols-outlined text-blue-600 text-sm mt-0.5">info</span>
+                    <Info className="w-4 h-4 text-blue-600 mt-0.5" />
                     <span className="text-sm text-blue-800 font-jakarta">Tambahkan catatan untuk menjelaskan konteks</span>
                   </li>
                 </ul>

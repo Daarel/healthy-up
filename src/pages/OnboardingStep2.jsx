@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { ArrowLeft, ArrowRight, Minus, Plus, User, UserCircle2 } from "lucide-react";
 
 export default function OnboardingStep2() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export default function OnboardingStep2() {
           onClick={() => navigate("/onboarding/1")}
           className="flex items-center gap-2 text-[#6d7b6c] hover:text-[#191c20] transition-colors pt-6 pb-2 w-fit"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <ArrowLeft className="w-5 h-5" />
           <span className="font-jakarta text-sm">Kembali</span>
         </button>
 
@@ -55,7 +56,7 @@ export default function OnboardingStep2() {
                       : "border-[#c1c9bf] bg-white hover:border-[#006e2f]/50"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1", color: gender === "male" ? "#006e2f" : "#6d7b6c" }}>male</span>
+                  <User className={`w-10 h-10 ${gender === "male" ? "text-[#006e2f]" : "text-[#6d7b6c]"}`} />
                   <span className={`font-jakarta font-medium ${gender === "male" ? "text-[#006e2f]" : "text-[#191c20]"}`}>
                     Laki-laki
                   </span>
@@ -68,7 +69,7 @@ export default function OnboardingStep2() {
                       : "border-[#c1c9bf] bg-white hover:border-[#006e2f]/50"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-4xl" style={{ fontVariationSettings: "'FILL' 1", color: gender === "female" ? "#006e2f" : "#6d7b6c" }}>female</span>
+                  <UserCircle2 className={`w-10 h-10 ${gender === "female" ? "text-[#006e2f]" : "text-[#6d7b6c]"}`} />
                   <span className={`font-jakarta font-medium ${gender === "female" ? "text-[#006e2f]" : "text-[#191c20]"}`}>
                     Perempuan
                   </span>
@@ -86,7 +87,7 @@ export default function OnboardingStep2() {
                   onClick={() => setAge(Math.max(10, age - 1))}
                   className="w-12 h-12 rounded-xl bg-white border border-[#c1c9bf] flex items-center justify-center hover:bg-[#f8f9ff] transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[#191c20]">remove</span>
+                  <Minus className="w-5 h-5 text-[#191c20]" />
                 </button>
                 <div className="flex-1 text-center">
                   <span className="text-3xl font-bold text-[#191c20] font-lexend">{age}</span>
@@ -96,7 +97,7 @@ export default function OnboardingStep2() {
                   onClick={() => setAge(Math.min(100, age + 1))}
                   className="w-12 h-12 rounded-xl bg-white border border-[#c1c9bf] flex items-center justify-center hover:bg-[#f8f9ff] transition-colors"
                 >
-                  <span className="material-symbols-outlined text-[#191c20]">add</span>
+                  <Plus className="w-5 h-5 text-[#191c20]" />
                 </button>
               </div>
             </div>
@@ -130,7 +131,7 @@ export default function OnboardingStep2() {
               className="w-full bg-[#006e2f] text-white font-semibold py-4 rounded-xl hover:bg-[#005823] transition-colors font-lexend flex items-center justify-center gap-2"
             >
               Lanjutkan
-              <span className="material-symbols-outlined">arrow_forward</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         </div>

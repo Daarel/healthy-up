@@ -1,20 +1,38 @@
 import { useNavigate } from "react-router-dom";
+import { 
+  Droplets, 
+  Apple, 
+  Footprints, 
+  Moon, 
+  UtensilsCrossed, 
+  Salad, 
+  Dumbbell, 
+  Flame, 
+  MoreVertical, 
+  Scale, 
+  TrendingDown, 
+  Flag, 
+  CalendarDays,
+  Check,
+  CheckCircle2,
+  Circle
+} from "lucide-react";
 import Navbar from "../components/Navbar";
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
   const tasks = [
-    { id: 1, title: "Minum air 8 gelas", category: "Hidrasi", completed: true, icon: "water_drop" },
-    { id: 2, title: "Makan sayur 3 porsi", category: "Nutrisi", completed: false, icon: "nutrition" },
-    { id: 3, title: "Jalan kaki 30 menit", category: "Olahraga", completed: false, icon: "directions_walk" },
-    { id: 4, title: "Tidur 8 jam", category: "Istirahat", completed: false, icon: "bedtime" },
+    { id: 1, title: "Minum air 8 gelas", category: "Hidrasi", completed: true, Icon: Droplets },
+    { id: 2, title: "Makan sayur 3 porsi", category: "Nutrisi", completed: false, Icon: Apple },
+    { id: 3, title: "Jalan kaki 30 menit", category: "Olahraga", completed: false, Icon: Footprints },
+    { id: 4, title: "Tidur 8 jam", category: "Istirahat", completed: false, Icon: Moon },
   ];
 
   const activities = [
-    { time: "07:00", title: "Sarapan sehat", desc: "Oatmeal dengan buah", icon: "breakfast_dining" },
-    { time: "12:00", title: "Makan siang", desc: "Ayam panggang + salad", icon: "lunch_dining" },
-    { time: "17:00", title: "Workout", desc: "Cardio ringan 30 menit", icon: "fitness_center" },
+    { time: "07:00", title: "Sarapan sehat", desc: "Oatmeal dengan buah", Icon: UtensilsCrossed },
+    { time: "12:00", title: "Makan siang", desc: "Ayam panggang + salad", Icon: Salad },
+    { time: "17:00", title: "Workout", desc: "Cardio ringan 30 menit", Icon: Dumbbell },
   ];
 
   return (
@@ -37,10 +55,10 @@ export default function Dashboard() {
 
            
             <div className="hidden sm:flex items-center gap-2 bg-orange-50 px-3 py-2 rounded-xl whitespace-nowrap">
-              <span className="material-symbols-outlined text-orange-500">local_fire_department</span>
+              <Flame className="w-5 h-5 text-orange-500" />
               <div className="whitespace-nowrap">
                 <p className="text-sm font-bold text-orange-600 font-lexend leading-none">Streak</p>
-                <p className="text-xs text-orange-500 font-jakarta">5 Hari</p>
+                <p className="text-xs text-orange-500 font-jakarta">14 Hari</p>
               </div>
             </div>
           </div>
@@ -51,7 +69,7 @@ export default function Dashboard() {
             <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-[#191c20] font-lexend">Progress Minggu Ini</h3>
-                <span className="material-symbols-outlined text-[#6d7b6c]">more_vert</span>
+                <MoreVertical className="w-5 h-5 text-[#6d7b6c]" />
               </div>
               <div className="flex items-center justify-center">
                 <div className="relative w-32 h-32">
@@ -74,7 +92,7 @@ export default function Dashboard() {
             <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-[#191c20] font-lexend">Berat Badan</h3>
-                <span className="material-symbols-outlined text-[#6d7b6c]">monitor_weight</span>
+                <Scale className="w-5 h-5 text-[#6d7b6c]" />
               </div>
               <div className="mb-4">
                 <span className="text-4xl font-bold text-[#191c20] font-lexend">68.5</span>
@@ -82,7 +100,7 @@ export default function Dashboard() {
               </div>
               <div className="flex items-center gap-2 text-sm">
                 <span className="flex items-center gap-1 text-green-600 font-medium">
-                  <span className="material-symbols-outlined text-sm">trending_down</span>
+                  <TrendingDown className="w-4 h-4" />
                   -1.5 kg
                 </span>
                 <span className="text-[#6d7b6c] font-jakarta">vs minggu lalu</span>
@@ -97,7 +115,7 @@ export default function Dashboard() {
             <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold text-[#191c20] font-lexend">Kalori Hari Ini</h3>
-                <span className="material-symbols-outlined text-[#6d7b6c]">local_fire_department</span>
+                <Flame className="w-5 h-5 text-[#6d7b6c]" />
               </div>
               <div className="mb-4">
                 <span className="text-4xl font-bold text-[#191c20] font-lexend">1,250</span>
@@ -105,15 +123,15 @@ export default function Dashboard() {
               </div>
               <div className="flex gap-2">
                 <div className="flex-1 bg-orange-100 rounded-lg p-2 text-center">
-                  <span className="material-symbols-outlined text-orange-500 text-lg">restaurant</span>
+                  <UtensilsCrossed className="w-5 h-5 text-orange-500 mx-auto" />
                   <p className="text-xs font-semibold text-orange-700 font-lexend">450</p>
                 </div>
                 <div className="flex-1 bg-blue-100 rounded-lg p-2 text-center">
-                  <span className="material-symbols-outlined text-blue-500 text-lg">fitness_center</span>
+                  <Dumbbell className="w-5 h-5 text-blue-500 mx-auto" />
                   <p className="text-xs font-semibold text-blue-700 font-lexend">-200</p>
                 </div>
                 <div className="flex-1 bg-green-100 rounded-lg p-2 text-center">
-                  <span className="material-symbols-outlined text-green-500 text-lg">flag</span>
+                  <Flag className="w-5 h-5 text-green-500 mx-auto" />
                   <p className="text-xs font-semibold text-green-700 font-lexend">550</p>
                 </div>
               </div>
@@ -139,9 +157,11 @@ export default function Dashboard() {
                     <button className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
                       task.completed ? "bg-[#006e2f] text-white" : "bg-[#e5eeff] text-[#6d7b6c]"
                     }`}>
-                      <span className="material-symbols-outlined" style={{ fontVariationSettings: task.completed ? "'FILL' 1" : "" }}>
-                        {task.completed ? "check" : task.icon}
-                      </span>
+                      {task.completed ? (
+                        <Check className="w-5 h-5" />
+                      ) : (
+                        <task.Icon className="w-5 h-5" />
+                      )}
                     </button>
                     <div className="flex-1">
                       <p className={`font-medium font-jakarta ${task.completed ? "text-[#6d7b6c] line-through" : "text-[#191c20]"}`}>
@@ -149,9 +169,11 @@ export default function Dashboard() {
                       </p>
                       <p className="text-xs text-[#6d7b6c] font-jakarta">{task.category}</p>
                     </div>
-                    <span className={`material-symbols-outlined ${task.completed ? "text-[#006e2f]" : "text-[#c1c9bf]"}`} style={{ fontVariationSettings: task.completed ? "'FILL' 1" : "" }}>
-                      {task.completed ? "check_circle" : "radio_button_unchecked"}
-                    </span>
+                    {task.completed ? (
+                      <CheckCircle2 className="w-5 h-5 text-[#006e2f]" />
+                    ) : (
+                      <Circle className="w-5 h-5 text-[#c1c9bf]" />
+                    )}
                   </div>
                 ))}
               </div>
@@ -161,14 +183,14 @@ export default function Dashboard() {
             <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="font-semibold text-[#191c20] font-lexend">Jadwal Hari Ini</h3>
-                <span className="material-symbols-outlined text-[#6d7b6c]">calendar_today</span>
+                <CalendarDays className="w-5 h-5 text-[#6d7b6c]" />
               </div>
               <div className="space-y-4">
                 {activities.map((activity, index) => (
                   <div key={index} className="flex gap-4">
                     <div className="flex flex-col items-center">
                       <div className="w-10 h-10 rounded-xl bg-[#e5eeff] flex items-center justify-center">
-                        <span className="material-symbols-outlined text-[#006e2f]">{activity.icon}</span>
+                        <activity.Icon className="w-5 h-5 text-[#006e2f]" />
                       </div>
                       {index < activities.length - 1 && (
                         <div className="w-0.5 h-12 bg-[#e5eeff] my-1"></div>

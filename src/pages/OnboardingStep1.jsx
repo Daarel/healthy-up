@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
 
 export default function OnboardingStep1() {
   const navigate = useNavigate();
@@ -67,7 +68,7 @@ export default function OnboardingStep1() {
               className="w-full bg-[#006e2f] text-white font-semibold py-4 rounded-xl hover:bg-[#005823] transition-colors font-lexend flex items-center justify-center gap-2"
             >
               Lanjutkan
-              <span className="material-symbols-outlined">arrow_forward</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
 
             <div className="relative flex items-center justify-center my-6">

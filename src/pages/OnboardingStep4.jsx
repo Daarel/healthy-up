@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { ArrowLeft, ArrowRight, Info } from "lucide-react";
 
 export default function OnboardingStep4() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function OnboardingStep4() {
           onClick={() => navigate("/onboarding/3")}
           className="flex items-center gap-2 text-[#6d7b6c] hover:text-[#191c20] transition-colors pt-6 pb-2 w-fit"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <ArrowLeft className="w-5 h-5" />
           <span className="font-jakarta text-sm">Kembali</span>
         </button>
 
@@ -85,7 +86,7 @@ export default function OnboardingStep4() {
 
           {/* Info Box */}
           <div className="flex items-start gap-3 bg-blue-50 rounded-2xl p-4 mb-6">
-            <span className="material-symbols-outlined text-blue-500">info</span>
+            <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
             <p className="text-sm text-blue-700 font-jakarta">
               Target penurunan berat badan yang sehat adalah 0.5-1 kg per minggu.
             </p>
@@ -96,7 +97,7 @@ export default function OnboardingStep4() {
             className="w-full bg-[#006e2f] text-white font-semibold py-4 rounded-xl hover:bg-[#005823] transition-colors font-lexend flex items-center justify-center gap-2"
           >
             Lanjutkan
-            <span className="material-symbols-outlined">arrow_forward</span>
+            <ArrowRight className="w-5 h-5" />
           </button>
         </div>
 

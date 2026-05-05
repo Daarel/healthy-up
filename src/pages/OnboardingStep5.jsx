@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Rocket, UtensilsCrossed, Dumbbell, Clock } from "lucide-react";
 
 export default function OnboardingStep5() {
   const navigate = useNavigate();
@@ -12,7 +13,7 @@ export default function OnboardingStep5() {
           onClick={() => navigate("/onboarding/4")}
           className="flex items-center gap-2 text-[#6d7b6c] hover:text-[#191c20] transition-colors pt-6 pb-2 w-fit"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <ArrowLeft className="w-5 h-5" />
           <span className="font-jakarta text-sm">Kembali</span>
         </button>
 
@@ -42,7 +43,7 @@ export default function OnboardingStep5() {
           <div className="space-y-4 mb-6">
             <div className="bg-white rounded-2xl p-5 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff] flex items-center gap-4">
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-orange-500 text-2xl">restaurant</span>
+                <UtensilsCrossed className="w-6 h-6 text-orange-500" />
               </div>
               <div className="flex-1">
                 <p className="text-sm text-[#6d7b6c] font-jakarta">Kalori Harian</p>
@@ -52,7 +53,7 @@ export default function OnboardingStep5() {
 
             <div className="bg-white rounded-2xl p-5 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff] flex items-center gap-4">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-blue-500 text-2xl">fitness_center</span>
+                <Dumbbell className="w-6 h-6 text-blue-500" />
               </div>
               <div className="flex-1">
                 <p className="text-sm text-[#6d7b6c] font-jakarta">Olahraga</p>
@@ -62,7 +63,7 @@ export default function OnboardingStep5() {
 
             <div className="bg-white rounded-2xl p-5 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff] flex items-center gap-4">
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <span className="material-symbols-outlined text-purple-500 text-2xl">schedule</span>
+                <Clock className="w-6 h-6 text-purple-500" />
               </div>
               <div className="flex-1">
                 <p className="text-sm text-[#6d7b6c] font-jakarta">Estimasi Waktu</p>
@@ -79,7 +80,7 @@ export default function OnboardingStep5() {
             className="w-full bg-[#006e2f] text-white font-semibold py-4 rounded-xl hover:bg-[#005823] transition-colors font-lexend flex items-center justify-center gap-2"
           >
             Mulai Perjalanan
-            <span className="material-symbols-outlined mx-2">rocket_launch</span>
+            <Rocket className="w-5 h-5" />
           </button>
         </div>
 

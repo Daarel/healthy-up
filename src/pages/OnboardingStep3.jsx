@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, ArrowRight, Scale, Ruler } from "lucide-react";
 
 export default function OnboardingStep3() {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export default function OnboardingStep3() {
           onClick={() => navigate("/onboarding/2")}
           className="flex items-center gap-2 text-[#6d7b6c] hover:text-[#191c20] transition-colors pt-6 pb-2 w-fit"
         >
-          <span className="material-symbols-outlined">arrow_back</span>
+          <ArrowLeft className="w-5 h-5" />
           <span className="font-jakarta text-sm">Kembali</span>
         </button>
 
@@ -73,12 +74,12 @@ export default function OnboardingStep3() {
           {/* Info Cards */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div className="bg-[#e5eeff] rounded-2xl p-4 text-center">
-              <span className="material-symbols-outlined text-[#006e2f] text-2xl mb-2">monitor_weight</span>
+              <Scale className="w-6 h-6 text-[#006e2f] mx-auto mb-2" />
               <p className="text-xs text-[#6d7b6c] font-jakarta">Berat Ideal</p>
               <p className="text-lg font-bold text-[#191c20] font-lexend">58 - 71 kg</p>
             </div>
             <div className="bg-[#e5eeff] rounded-2xl p-4 text-center">
-              <span className="material-symbols-outlined text-[#006e2f] text-2xl mb-2">height</span>
+              <Ruler className="w-6 h-6 text-[#006e2f] mx-auto mb-2" />
               <p className="text-xs text-[#6d7b6c] font-jakarta">Tinggi</p>
               <p className="text-lg font-bold text-[#191c20] font-lexend">170 cm</p>
             </div>
@@ -89,7 +90,7 @@ export default function OnboardingStep3() {
             className="w-full bg-[#006e2f] text-white font-semibold py-4 rounded-xl hover:bg-[#005823] transition-colors font-lexend flex items-center justify-center gap-2"
           >
             Lanjutkan
-            <span className="material-symbols-outlined">arrow_forward</span>
+            <ArrowRight className="w-5 h-5" />
           </button>
         </div>
 
