@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 
 /**
  * @desc    Sign up user account
- * @route   POST /v1/auth/register
+ * @route   POST /api/v1/auth/register
  * @access  Public
  */
 const register = async (req, res) => {
@@ -58,7 +58,7 @@ const register = async (req, res) => {
 
 /**
  * @desc    Sign in user account
- * @route   POST /v1/auth/login
+ * @route   POST /api/v1/auth/login
  * @access  Public
  */
 const login = async (req, res) => {
@@ -107,7 +107,7 @@ const login = async (req, res) => {
 
 /**
  * @desc    log out user account
- * @route   POST /v1/auth/logout
+ * @route   POST /api/v1/auth/logout
  * @access  Public
  */
 const logout = async (req, res) => {
@@ -130,4 +130,4 @@ const logout = async (req, res) => {
   }
 };
 
-export { register, login };
+export { register, login, logout };
