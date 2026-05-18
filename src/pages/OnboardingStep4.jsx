@@ -7,13 +7,13 @@ export default function OnboardingStep4() {
   const [targetWeight, setTargetWeight] = useState(65);
 
   return (
-    <div className="h-screen flex bg-[#f8f9ff] overflow-hidden">
+    <div className="h-screen flex bg-[var(--color-bg)] overflow-hidden">
       {/* Left Side - Form */}
       <div className="w-full lg:w-1/2 flex flex-col px-6 lg:px-16 overflow-y-auto">
         {/* Back Button */}
         <button
           onClick={() => navigate("/onboarding/3")}
-          className="flex items-center gap-2 text-[#6d7b6c] hover:text-[#191c20] transition-colors pt-6 pb-2 w-fit"
+          className="flex items-center gap-2 text-[#6d7b6c] hover:text-[#005823] transition-colors pt-6 pb-2 w-fit"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="font-jakarta text-sm">Kembali</span>
@@ -23,7 +23,7 @@ export default function OnboardingStep4() {
         <div className="w-full max-w-md mx-auto mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-[#6d7b6c] font-jakarta">Langkah 4</span>
-            <span className="text-xs font-medium text-[#6d7b6c] font-jakarta">5</span>
+            
           </div>
           <div className="h-2 bg-[#e5eeff] rounded-full overflow-hidden">
             <div className="h-full w-[80%] bg-[#006e2f] rounded-full transition-all duration-500"></div>
@@ -85,9 +85,9 @@ export default function OnboardingStep4() {
           </div>
 
           {/* Info Box */}
-          <div className="flex items-start gap-3 bg-blue-50 rounded-2xl p-4 mb-6">
-            <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-blue-700 font-jakarta">
+          <div className="flex items-start gap-3  rounded-2xl p-4 mb-6">
+            {/* <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" /> */}
+            <p className="text-sm text-[#6d7b6c] font-jakarta">
               Target penurunan berat badan yang sehat adalah 0.5-1 kg per minggu.
             </p>
           </div>
@@ -106,10 +106,10 @@ export default function OnboardingStep4() {
       </div>
 
       {/* Right Side - Image */}
-      <div className="hidden lg:block lg:w-1/2 bg-[#e5eeff] p-6">
-        <div className="h-full rounded-[32px] overflow-hidden relative">
+      <div className="hidden lg:block lg:w-1/2 p-6">
+        <div className="h-full rounded-3xl overflow-hidden relative">
           <img
-            src="https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=1200&h=1600&fit=crop"
+            src="/public/onboarding/4.jpg"
             alt="Fitness"
             className="w-full h-full object-cover"
           />

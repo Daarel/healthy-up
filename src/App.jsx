@@ -4,6 +4,10 @@ import OnboardingStep2 from "./pages/OnboardingStep2";
 import OnboardingStep3 from "./pages/OnboardingStep3";
 import OnboardingStep4 from "./pages/OnboardingStep4";
 import OnboardingStep5 from "./pages/OnboardingStep5";
+import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPasswordOtp from "./pages/ResetPasswordOtp";
+import ResetPasswordBaru from "./pages/ResetPasswordBaru";
 import Dashboard from "./pages/Dashboard";
 import Tugas from "./pages/Tugas";
 import Hadiah from "./pages/Hadiah";
@@ -19,6 +23,10 @@ function App() {
         <Route path="/onboarding/3" element={<OnboardingStep3 />} />
         <Route path="/onboarding/4" element={<OnboardingStep4 />} />
         <Route path="/onboarding/5" element={<OnboardingStep5 />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/lupa-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/otp" element={<ResetPasswordOtp />} />
+        <Route path="/reset-password/baru" element={<ResetPasswordBaru />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/tugas" element={<Tugas />} />
         <Route path="/hadiah" element={<Hadiah />} />

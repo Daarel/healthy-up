@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import Profile from './Profil';
+import Profile from '../pages/Profil';
 
 const renderProfil = () => {
   return render(
@@ -36,7 +36,7 @@ describe('Profil Page', () => {
   it('menampilkan info streak', () => {
     renderProfil();
     expect(screen.getByText('14')).toBeInTheDocument();
-    expect(screen.getByText('Hari')).toBeInTheDocument();
+    expect(screen.getByText('Hari Streak')).toBeInTheDocument();
   });
 
   it('menampilkan tombol Bagikan Profil', () => {
@@ -227,28 +227,21 @@ describe('Profil Page', () => {
     expect(screen.getByText('Minggu ini')).toBeInTheDocument();
   });
 
-  it('menampilkan section Manajemen Akun', () => {
+  it('menampilkan section Pengaturan Akun', () => {
     renderProfil();
-    expect(screen.getByText('Manajemen Akun')).toBeInTheDocument();
+    expect(screen.getByText('Pengaturan Akun')).toBeInTheDocument();
   });
 
-  it('menampilkan menu Informasi Pribadi, Keamanan & Password, Metode Pembayaran', () => {
+  it('menampilkan menu Informasi Pribadi', () => {
     renderProfil();
     expect(screen.getByText('Informasi Pribadi')).toBeInTheDocument();
-    expect(screen.getByText('Keamanan & Password')).toBeInTheDocument();
-    expect(screen.getByText('Metode Pembayaran')).toBeInTheDocument();
+    expect(screen.queryByText('Keamanan & Password')).not.toBeInTheDocument();
+    expect(screen.queryByText('Metode Pembayaran')).not.toBeInTheDocument();
   });
 
-  it('menu akun dapat diklik', () => {
+  it('menu Informasi Pribadi dapat diklik', () => {
     renderProfil();
     fireEvent.click(screen.getByText('Informasi Pribadi'));
-    fireEvent.click(screen.getByText('Keamanan & Password'));
-    fireEvent.click(screen.getByText('Metode Pembayaran'));
-  });
-
-  it('menampilkan section Preferensi Aplikasi', () => {
-    renderProfil();
-    expect(screen.getByText('Preferensi Aplikasi')).toBeInTheDocument();
   });
 
   it('menampilkan toggle Mode Gelap', () => {
@@ -256,9 +249,9 @@ describe('Profil Page', () => {
     expect(screen.getByText('Mode Gelap')).toBeInTheDocument();
   });
 
-  it('menampilkan toggle Peringatan Harian', () => {
+  it('tidak menampilkan toggle Peringatan Harian', () => {
     renderProfil();
-    expect(screen.getByText('Peringatan Harian')).toBeInTheDocument();
+    expect(screen.queryByText('Peringatan Harian')).not.toBeInTheDocument();
   });
 
   it('toggle Mode Gelap dapat diklik', () => {
@@ -270,12 +263,25 @@ describe('Profil Page', () => {
     fireEvent.click(toggleButton);
   });
 
-  it('toggle Peringatan Harian dapat diklik', () => {
+  it('menampilkan tombol Keluar di pengaturan akun', () => {
     renderProfil();
-    const reminderText = screen.getByText('Peringatan Harian');
-    const toggleContainer = reminderText.closest('div').parentElement;
-    const toggleButton = toggleContainer.querySelector('button');
-    fireEvent.click(toggleButton);
+    // "Keluar" muncul di Navbar dan di Pengaturan Akun
+    const keluarItems = screen.getAllByText('Keluar');
+    expect(keluarItems.length).toBeGreaterThanOrEqual(1);
+    // Pastikan yang di pengaturan akun menggunakan font-jakarta (bukan Navbar)
+    const settingsKeluar = keluarItems.find(el =>
+      el.className.includes('font-jakarta')
+    );
+    expect(settingsKeluar).toBeTruthy();
+  });
+
+  it('tombol Keluar di pengaturan akun dapat diklik', () => {
+    renderProfil();
+    const keluarItems = screen.getAllByText('Keluar');
+    const settingsKeluar = keluarItems.find(el =>
+      el.className.includes('font-jakarta')
+    );
+    fireEvent.click(settingsKeluar.closest('button'));
   });
 
   it('menampilkan tombol Hapus Akun', () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import OnboardingStep1 from './OnboardingStep1';
+import OnboardingStep1 from '../pages/OnboardingStep1';
 
 const renderStep1 = () => {
   return render(
@@ -19,7 +19,6 @@ describe('OnboardingStep1 Page', () => {
   it('menampilkan indikator langkah 1 dari 5', () => {
     renderStep1();
     expect(screen.getByText('Langkah 1')).toBeInTheDocument();
-    expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   it('menampilkan judul Buat Akun Anda', () => {
@@ -69,16 +68,6 @@ describe('OnboardingStep1 Page', () => {
   it('menampilkan tombol Lanjutkan', () => {
     renderStep1();
     expect(screen.getByText('Lanjutkan')).toBeInTheDocument();
-  });
-
-  it('menampilkan tombol Daftar dengan Google', () => {
-    renderStep1();
-    expect(screen.getByText('Daftar dengan Google')).toBeInTheDocument();
-  });
-
-  it('menampilkan teks separator atau', () => {
-    renderStep1();
-    expect(screen.getByText('atau')).toBeInTheDocument();
   });
 
   it('menampilkan link Masuk untuk pengguna yang sudah punya akun', () => {

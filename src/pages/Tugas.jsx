@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { 
   CheckCircle2, 
   Clock, 
   Star, 
   CalendarDays, 
   Trophy, 
-  Flame,
   Upload,
   Eye,
   Circle,
@@ -14,17 +12,34 @@ import {
   HelpCircle,
   X,
   CloudUpload,
-  BookOpen,
-  Camera,
   Video,
   Lightbulb,
-  Info
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 
+const INITIAL_TASKS = {
+  "hari-ini": [
+    { id: 1, title: "Minum air 8 gelas",            category: "Hidrasi",   completed: true,  points: 10 },
+    { id: 2, title: "Makan sayur 3 porsi",           category: "Nutrisi",   completed: false, points: 15 },
+    { id: 3, title: "Jalan kaki 30 menit",           category: "Olahraga",  completed: false, points: 20 },
+    { id: 4, title: "Tidur 8 jam",                   category: "Istirahat", completed: false, points: 10 },
+    { id: 5, title: "Makan protein tinggi",          category: "Nutrisi",   completed: false, points: 15 },
+    { id: 6, title: "Stretching pagi",               category: "Olahraga",  completed: true,  points: 10 },
+  ],
+  "minggu-ini": [
+    { id: 7, title: "Workout 4x seminggu",           category: "Olahraga",  completed: false, points: 50 },
+    { id: 8, title: "Tidur teratur 7 hari",          category: "Istirahat", completed: false, points: 30 },
+    { id: 9, title: "Minum air cukup 7 hari",        category: "Hidrasi",   completed: true,  points: 40 },
+  ],
+  "tantangan": [
+    { id: 10, title: "Turun 1kg minggu ini",         category: "Tantangan", completed: false, points: 100 },
+    { id: 11, title: "Olahraga 30 hari berturut-turut", category: "Tantangan", completed: false, points: 200 },
+  ],
+};
+
 export default function Tugas() {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("hari-ini");
+  const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [guideModalOpen, setGuideModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
@@ -32,39 +47,25 @@ export default function Tugas() {
   const [previewMedia, setPreviewMedia] = useState([]);
   const [notes, setNotes] = useState("");
 
-  const tasks = {
-    "hari-ini": [
-      { id: 1, title: "Minum air 8 gelas", category: "Hidrasi", completed: true, icon: "droplets", points: 10 },
-      { id: 2, title: "Makan sayur 3 porsi", category: "Nutrisi", completed: false, icon: "apple", points: 15 },
-      { id: 3, title: "Jalan kaki 30 menit", category: "Olahraga", completed: false, icon: "footprints", points: 20 },
-      { id: 4, title: "Tidur 8 jam", category: "Istirahat", completed: false, icon: "moon", points: 10 },
-      { id: 5, title: "Makan protein tinggi", category: "Nutrisi", completed: false, icon: "utensils", points: 15 },
-      { id: 6, title: "Stretching pagi", category: "Olahraga", completed: true, icon: "activity", points: 10 },
-    ],
-    "minggu-ini": [
-      { id: 7, title: "Workout 4x seminggu", category: "Olahraga", completed: false, icon: "dumbbell", points: 50 },
-      { id: 8, title: "Tidur teratur 7 hari", category: "Istirahat", completed: false, icon: "clock", points: 30 },
-      { id: 9, title: "Minum air cukup 7 hari", category: "Hidrasi", completed: true, icon: "droplets", points: 40 },
-    ],
-    "tantangan": [
-      { id: 10, title: "Turun 1kg minggu ini", category: "Tantangan", completed: false, icon: "trophy", points: 100 },
-      { id: 11, title: "Olahraga 30 hari berturut-turut", category: "Tantangan", completed: false, icon: "flame", points: 200 },
-    ],
-  };
-
   const currentTasks = tasks[activeTab] || [];
   const completedCount = currentTasks.filter(t => t.completed).length;
   const totalPoints = currentTasks.filter(t => t.completed).reduce((sum, t) => sum + t.points, 0);
+
+  // Tandai tugas selesai / batalkan
+  const toggleTask = (taskId) => {
+    setTasks(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].map(t =>
+        t.id === taskId ? { ...t, completed: !t.completed } : t
+      ),
+    }));
+  };
 
   const openUploadModal = (task) => {
     setSelectedTask(task);
     setUploadModalOpen(true);
     setPreviewMedia([]);
     setNotes("");
-  };
-
-  const openGuideModal = () => {
-    setGuideModalOpen(true);
   };
 
   const closeUploadModal = () => {
@@ -74,34 +75,23 @@ export default function Tugas() {
     setNotes("");
   };
 
-  const closeGuideModal = () => {
-    setGuideModalOpen(false);
-  };
-
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
-      files.forEach(file => {
-        const isVideo = file.type.startsWith("video/");
-        const isImage = file.type.startsWith("image/");
-        
-        if (!isVideo && !isImage) {
-          alert("Hanya file gambar (PNG, JPG, JPEG) atau video (MP4) yang diizinkan");
-          return;
-        }
+    Array.from(e.target.files).forEach(file => {
+      const isVideo = file.type.startsWith("video/");
+      const isImage = file.type.startsWith("image/");
+      if (!isVideo && !isImage) return;
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreviewMedia(prev => [...prev, {
-            id: Date.now() + Math.random(),
-            src: reader.result,
-            type: isVideo ? "video" : "image",
-            name: file.name
-          }]);
-        };
-        reader.readAsDataURL(file);
-      });
-    }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewMedia(prev => [...prev, {
+          id: Date.now() + Math.random(),
+          src: reader.result,
+          type: isVideo ? "video" : "image",
+          name: file.name,
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
   const removeMedia = (id) => {
@@ -109,23 +99,49 @@ export default function Tugas() {
   };
 
   const handleSubmitProof = () => {
-    if (selectedTask && previewMedia.length > 0) {
-      setUploadedProofs({
-        ...uploadedProofs,
-        [selectedTask.id]: {
-          media: previewMedia,
-          notes: notes,
-          timestamp: new Date().toLocaleString('id-ID'),
-        }
-      });
-      closeUploadModal();
-    }
+    if (!selectedTask || previewMedia.length === 0) return;
+
+    // Simpan bukti
+    setUploadedProofs(prev => ({
+      ...prev,
+      [selectedTask.id]: {
+        media: previewMedia,
+        notes,
+        timestamp: new Date().toLocaleString("id-ID"),
+      },
+    }));
+
+    // Tandai tugas otomatis selesai
+    setTasks(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].map(t =>
+        t.id === selectedTask.id ? { ...t, completed: true } : t
+      ),
+    }));
+
+    closeUploadModal();
   };
 
-  const hasProof = (taskId) => uploadedProofs[taskId];
+  const handleDeleteProof = (taskId) => {
+    setUploadedProofs(prev => {
+      const next = { ...prev };
+      delete next[taskId];
+      return next;
+    });
+    // Batalkan status selesai jika bukti dihapus
+    setTasks(prev => ({
+      ...prev,
+      [activeTab]: prev[activeTab].map(t =>
+        t.id === taskId ? { ...t, completed: false } : t
+      ),
+    }));
+    closeUploadModal();
+  };
+
+  const hasProof = (taskId) => Boolean(uploadedProofs[taskId]);
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff]">
+    <div className="min-h-screen bg-[var(--color-bg)]">
       <Navbar />
 
       {/* Main Content */}
@@ -148,9 +164,7 @@ export default function Tugas() {
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                  <CheckCircle2 className="w-5 h-5 text-[#006e2f]" />
-                </div>
+                <CheckCircle2 className="w-5 h-5 text-[#006e2f]" />
                 <div>
                   <p className="text-2xl font-bold text-[#191c20] font-lexend">{completedCount}</p>
                   <p className="text-xs text-[#6d7b6c] font-jakarta">Selesai</p>
@@ -159,9 +173,7 @@ export default function Tugas() {
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-orange-500" />
-                </div>
+                <Clock className="w-5 h-5 text-orange-500" />
                 <div>
                   <p className="text-2xl font-bold text-[#191c20] font-lexend">{currentTasks.length - completedCount}</p>
                   <p className="text-xs text-[#6d7b6c] font-jakarta">Tersisa</p>
@@ -170,9 +182,7 @@ export default function Tugas() {
             </div>
             <div className="bg-white rounded-2xl p-4 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
-                  <Star className="w-5 h-5 text-purple-500" />
-                </div>
+                <Star className="w-5 h-5 text-purple-500" />
                 <div>
                   <p className="text-2xl font-bold text-[#191c20] font-lexend">{totalPoints}</p>
                   <p className="text-xs text-[#6d7b6c] font-jakarta">Poin</p>
@@ -184,9 +194,9 @@ export default function Tugas() {
           {/* Tabs */}
           <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar">
             {[
-              { id: "hari-ini", label: "Hari Ini", Icon: CalendarDays },
-              { id: "minggu-ini", label: "Minggu Ini", Icon: CalendarDays },
-              { id: "tantangan", label: "Tantangan", Icon: Trophy },
+              { id: "hari-ini", label: "Hari Ini", },
+              { id: "minggu-ini", label: "Minggu Ini",  },
+              { id: "tantangan", label: "Tantangan", },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -197,7 +207,7 @@ export default function Tugas() {
                     : "bg-white text-[#6d7b6c] hover:bg-[#e5eeff]"
                 }`}
               >
-                <tab.Icon className="w-5 h-5" />
+                
                 {tab.label}
               </button>
             ))}
@@ -213,16 +223,18 @@ export default function Tugas() {
                 }`}
               >
                 <button
+                  onClick={() => toggleTask(task.id)}
+                  aria-label={task.completed ? "Batalkan tugas" : "Tandai selesai"}
                   className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
                     task.completed
-                      ? "bg-[#006e2f] text-white"
+                      ? "bg-[#006e2f] text-white hover:bg-[#005823]"
                       : "bg-[#e5eeff] text-[#6d7b6c] hover:bg-[#dce9ff]"
                   }`}
                 >
                   {task.completed ? (
                     <CheckCircle2 className="w-6 h-6" />
                   ) : (
-                    <Star className="w-6 h-6" />
+                    <Circle className="w-6 h-6" />
                   )}
                 </button>
                 <div className="flex-1">
@@ -248,8 +260,7 @@ export default function Tugas() {
                     <Star className="w-4 h-4 text-yellow-500" />
                     <span className="text-sm font-semibold text-yellow-700 font-lexend">+{task.points}</span>
                   </div>
-                  
-                  {/* Upload Button */}
+
                   <button
                     onClick={() => openUploadModal(task)}
                     className={`flex items-center gap-1 px-3 py-2 rounded-xl font-medium text-sm font-jakarta transition-colors ${
@@ -265,12 +276,6 @@ export default function Tugas() {
                     )}
                     {hasProof(task.id) ? "Lihat" : "Upload"}
                   </button>
-                  
-                  {task.completed ? (
-                    <CheckCircle2 className="w-6 h-6 text-[#006e2f]" />
-                  ) : (
-                    <Circle className="w-6 h-6 text-[#c1c9bf]" />
-                  )}
                 </div>
               </div>
             ))}
@@ -301,7 +306,7 @@ export default function Tugas() {
               <div className="flex items-center gap-2">
                 {!hasProof(selectedTask.id) && (
                   <button
-                    onClick={openGuideModal}
+                    onClick={() => setGuideModalOpen(true)}
                     className="flex items-center gap-1 px-3 py-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors text-sm font-medium font-jakarta"
                     title="Lihat Panduan Upload"
                   >
@@ -345,11 +350,7 @@ export default function Tugas() {
                     Diupload pada {uploadedProofs[selectedTask.id].timestamp}
                   </div>
                   <button
-                    onClick={() => {
-                      setPreviewMedia([]);
-                      setNotes("");
-                      setUploadedProofs({ ...uploadedProofs, [selectedTask.id]: null });
-                    }}
+                    onClick={() => handleDeleteProof(selectedTask.id)}
                     className="w-full py-3 border-2 border-red-200 text-red-600 rounded-xl font-medium hover:bg-red-50 transition-colors font-jakarta"
                   >
                     Hapus Bukti
@@ -440,16 +441,14 @@ export default function Tugas() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-6 border-b border-[#e5eeff]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <BookOpen className="w-5 h-5 text-blue-600" />
-                </div>
+                
                 <div>
                   <h3 className="text-xl font-bold text-[#191c20] font-lexend">Panduan Upload Bukti</h3>
                   <p className="text-sm text-[#6d7b6c] font-jakarta">Tips agar bukti diterima</p>
                 </div>
               </div>
               <button
-                onClick={closeGuideModal}
+                onClick={() => setGuideModalOpen(false)}
                 className="w-10 h-10 rounded-xl bg-[#f8f9ff] flex items-center justify-center hover:bg-[#e5eeff] transition-colors"
               >
                 <X className="w-5 h-5 text-[#6d7b6c]" />
@@ -459,77 +458,57 @@ export default function Tugas() {
             {/* Modal Body */}
             <div className="p-6 space-y-6">
               {/* Panduan Foto */}
-              <div className="bg-green-50 rounded-2xl p-5">
+              <div className=" p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <Camera className="w-5 h-5 text-green-600" />
-                  <h4 className="font-bold text-green-800 font-lexend">Panduan Foto</h4>
+                  <h4 className="font-bold font-lexend">Panduan Foto</h4>
                 </div>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
-                    <span className="text-sm text-green-800 font-jakarta">Pastikan pencahayaan cukup terang, hindari backlight</span>
+                    <span className="text-sm text-[#6d7b6c] font-jakarta">Pastikan pencahayaan cukup terang, hindari backlight</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
-                    <span className="text-sm text-green-800 font-jakarta">Foto dari sudut yang jelas dan tidak blur</span>
+                    <span className="text-sm text-[#6d7b6c] font-jakarta">Foto dari sudut yang jelas dan tidak blur</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
-                    <span className="text-sm text-green-800 font-jakarta">Objek utama berada di tengah frame</span>
+                    <span className="text-sm text-[#6d7b6c] font-jakarta">Objek utama berada di tengah frame</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5" />
-                    <span className="text-sm text-green-800 font-jakarta">Resolusi minimal 720p agar detail terlihat</span>
+                    <span className="text-sm ttext-[#6d7b6c] font-jakarta">Resolusi minimal 720p agar detail terlihat</span>
                   </li>
                 </ul>
               </div>
+     
 
               {/* Panduan Video */}
-              <div className="bg-purple-50 rounded-2xl p-5">
+              <div className="p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <Video className="w-5 h-5 text-purple-600" />
-                  <h4 className="font-bold text-purple-800 font-lexend">Panduan Video</h4>
+
+                  <h4 className="font-bold text-[#191c20] font-lexend">Panduan Video</h4>
                 </div>
                 <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-purple-600 mt-0.5" />
-                    <span className="text-sm text-purple-800 font-jakarta">Durasi minimal 10 detik, maksimal 60 detik</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-purple-600 mt-0.5" />
-                    <span className="text-sm text-purple-800 font-jakarta">Rekam dengan posisi landscape (horizontal)</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-purple-600 mt-0.5" />
-                    <span className="text-sm text-purple-800 font-jakarta">Pastikan suara dan gerakan terlihat jelas</span>
-                  </li>
+                  <li className="text-sm text-[#6d7b6c] font-jakarta">Durasi minimal 10 detik, maksimal 60 detik</li>
+                  <li className="text-sm text-[#6d7b6c] font-jakarta">Rekam dengan posisi landscape (horizontal)</li>
+                  <li className="text-sm text-[#6d7b6c] font-jakarta">Pastikan suara dan gerakan terlihat jelas</li>
                 </ul>
               </div>
 
-              {/* Tips */}
-              <div className="bg-blue-50 rounded-2xl p-5">
+              {/* Tips Tambahan */}
+              <div className="p-5">
                 <div className="flex items-center gap-2 mb-4">
-                  <Lightbulb className="w-5 h-5 text-blue-600" />
-                  <h4 className="font-bold text-blue-800 font-lexend">Tips Tambahan</h4>
+                  <h4 className="font-bold text-[#191c20] font-lexend">Tips Tambahan</h4>
                 </div>
                 <ul className="space-y-3">
-                  <li className="flex items-start gap-3">
-                    <Info className="w-4 h-4 text-blue-600 mt-0.5" />
-                    <span className="text-sm text-blue-800 font-jakarta">Bisa upload lebih dari 1 foto/video untuk bukti yang lebih kuat</span>
-                  </li>
-                  <li className="flex items-start gap-3">
-                    <Info className="w-4 h-4 text-blue-600 mt-0.5" />
-                    <span className="text-sm text-blue-800 font-jakarta">Tambahkan catatan untuk menjelaskan konteks</span>
-                  </li>
+                  <li className="text-sm text-[#6d7b6c] font-jakarta">Bisa upload lebih dari 1 foto/video untuk bukti yang lebih kuat</li>
+                  <li className="text-sm text-[#6d7b6c] font-jakarta">Tambahkan catatan untuk menjelaskan konteks</li>
                 </ul>
               </div>
 
               {/* Button */}
               <button
-                onClick={closeGuideModal}
+                onClick={() => setGuideModalOpen(false)}
                 className="w-full py-4 bg-[#006e2f] text-white rounded-xl font-semibold hover:bg-[#005823] transition-colors font-lexend"
               >
-                Mengerti, Lanjut Upload
+                Oke
               </button>
             </div>
           </div>

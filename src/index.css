@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-bg: #f8f9ff;
+  --color-text: #191c20;
+  --color-primary: #006e2f;
+  --color-primary-light: #22c55e;
+  --color-muted: #6d7b6c;
+  --color-border: #e5eeff;
+  --color-surface: #ffffff;
+  --color-danger: #ba1a1a;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -10,8 +21,8 @@
 
 body {
   font-family: 'Plus Jakarta Sans', sans-serif;
-  background-color: #f8f9ff;
-  color: #191c20;
+  background-color: var(--color-bg);
+  color: var(--color-text);
   overflow-x: hidden;
 }
 

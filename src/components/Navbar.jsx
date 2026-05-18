@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { Home, ClipboardList, Trophy, UserCircle, LogOut } from "lucide-react";
+import Logo from "./ui/logo";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -14,10 +15,9 @@ export default function Navbar() {
       {/* Desktop Side Navigation */}
       <nav className="hidden lg:flex flex-col fixed left-0 top-0 h-full p-6 space-y-8 bg-white border-r border-[#eff4ff] shadow-[20px_0_40px_-10px_rgba(34,197,94,0.04)] w-72 z-50">
         <div className="flex items-center gap-3 px-2">
-          
           <div>
-            <h1 className="text-xl font-extrabold text-[#22c55e] font-lexend leading-none">HealthyUp</h1>
-            <p className="text-[10px] font-lexend font-medium uppercase tracking-widest text-[#6d7b6c]">Weight Management</p>
+            <Logo />
+           
           </div>
         </div>
 
@@ -70,7 +70,7 @@ export default function Navbar() {
 
         <div>
           <button 
-            onClick={() => navigate("/onboarding/1")}
+            onClick={() => navigate("/login")}
             className="w-full flex items-center gap-4 px-4 py-3 text-[#ba1a1a] hover:opacity-80 transition-opacity"
           >
             <LogOut className="w-5 h-5" />

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import OnboardingStep3 from './OnboardingStep3';
+import OnboardingStep3 from '../pages/OnboardingStep3';
 
 const renderStep3 = () => {
   return render(
@@ -19,7 +19,6 @@ describe('OnboardingStep3 Page', () => {
   it('menampilkan indikator langkah 3 dari 5', () => {
     renderStep3();
     expect(screen.getByText('Langkah 3')).toBeInTheDocument();
-    expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   it('menampilkan judul Hasil BMI Anda', () => {

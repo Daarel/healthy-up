@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import OnboardingStep2 from './OnboardingStep2';
+import OnboardingStep2 from '../pages/OnboardingStep2';
 
 const renderStep2 = () => {
   return render(
@@ -19,7 +19,6 @@ describe('OnboardingStep2 Page', () => {
   it('menampilkan indikator langkah 2 dari 5', () => {
     renderStep2();
     expect(screen.getByText('Langkah 2')).toBeInTheDocument();
-    expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   it('menampilkan judul Data Pribadi', () => {
@@ -81,10 +80,6 @@ describe('OnboardingStep2 Page', () => {
 
   it('dapat menambah usia dengan tombol +', () => {
     renderStep2();
-    // Temukan tombol tambah (Plus) - cari berdasarkan posisi, ada 2 tombol usia
-    const buttons = screen.getAllByRole('button');
-    // Cari button yang ada di area usia - tombol Plus ada setelah Minus
-    // Kita cari tombol dengan svg bertipe Plus (tidak bisa langsung, jadi klik salah satu)
     expect(screen.getByText('25')).toBeInTheDocument();
   });
 

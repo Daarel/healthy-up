@@ -1,28 +1,25 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { 
-  Edit2, 
-  Star, 
-  Flame, 
-  Share2, 
-  ChevronRight, 
-  User, 
-  Lock, 
-  CreditCard, 
-  Moon, 
-  Bell,
+import {
+  Edit2,
+  Star,
+  Share2,
+  ChevronRight,
+  User,
+  Moon,
   Trash2,
   AlertTriangle,
   Flame as FireIcon,
+  LogOut,
   Plus,
   Scale,
   TrendingDown,
   TrendingUp,
   Minus,
-  X,
   CheckCircle2,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
+import WeightInputModal from "../components/WeightInputModal";
+import Streak from "../components/ui/streak";
 
 // Data riwayat berat awal (hardcoded sebagai data historis)
 const INITIAL_WEIGHT_LOG = [
@@ -35,18 +32,22 @@ const INITIAL_WEIGHT_LOG = [
 ];
 
 export default function Profile() {
-  const navigate = useNavigate();
   const [chartPeriod, setChartPeriod] = useState("mingguan");
   const [darkMode, setDarkMode] = useState(false);
-  const [dailyReminder, setDailyReminder] = useState(true);
-
-  // --- State berat badan ---
   const [weightLog, setWeightLog] = useState(INITIAL_WEIGHT_LOG);
   const [showWeightModal, setShowWeightModal] = useState(false);
-  const [inputWeight, setInputWeight] = useState("");
-  const [inputNote, setInputNote] = useState("");
-  const [inputError, setInputError] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+
+  const handleWeightSuccess = (value, note) => {
+    const today = new Date().toISOString().split("T")[0];
+    setWeightLog(prev => [
+      ...prev,
+      { id: Date.now(), date: today, weight: value, note },
+    ]);
+    setShowWeightModal(false);
+    setShowSuccess(true);
+    setTimeout(() => setShowSuccess(false), 3000);
+  };
 
   // Derived values dari weightLog
   const latestEntry = weightLog[weightLog.length - 1];
@@ -58,7 +59,7 @@ export default function Profile() {
 
   const user = {
     name: "Gathan Ghifari",
-    location: "Jakarta, Indonesia",
+    
     joinDate: "Jan 2024",
     level: 12,
     title: "Pejuang",
@@ -67,59 +68,6 @@ export default function Profile() {
   };
 
   const stats = { calories: 12480 };
-
-  const badges = [
-    { id: 1, name: "Pagi Aktif",       icon: "sun",          color: "bg-orange-100", iconColor: "text-orange-500", locked: false, desc: "Lari 5 hari berturut" },
-    { id: 2, name: "Hidrasi Juara",    icon: "droplets",     color: "bg-blue-100",   iconColor: "text-blue-500",   locked: false, desc: "Target air 1 bulan"  },
-    { id: 3, name: "Pecinta Alam",     icon: "tree-pine",    color: "bg-green-100",  iconColor: "text-green-500",  locked: false, desc: "10km di jalur trail" },
-    { id: 4, name: "Nutrisi Juara",    icon: "salad",        color: "bg-red-100",    iconColor: "text-red-500",    locked: false, desc: "Makan sehat 30 hari" },
-    { id: 5, name: "Maraton Pertama",  icon: "person-running", color: "bg-purple-100", iconColor: "text-purple-500", locked: true, desc: "Segera hadir" },
-    { id: 6, name: "Master Yoga",      icon: "flower-lotus", color: "bg-teal-100",   iconColor: "text-teal-500",   locked: true,  desc: "Segera hadir" },
-  ];
-
-  const menuItems = [
-    { id: 1, Icon: User,       label: "Informasi Pribadi",     action: () => {} },
-    { id: 2, Icon: Lock,       label: "Keamanan & Password",   action: () => {} },
-    { id: 3, Icon: CreditCard, label: "Metode Pembayaran",     action: () => {} },
-  ];
-
-  // --- Handlers modal berat badan ---
-  const openWeightModal = () => {
-    setInputWeight("");
-    setInputNote("");
-    setInputError("");
-    setShowWeightModal(true);
-  };
-
-  const closeWeightModal = () => {
-    setShowWeightModal(false);
-    setInputError("");
-  };
-
-  const handleSaveWeight = () => {
-    const val = parseFloat(inputWeight);
-    if (!inputWeight || isNaN(val)) {
-      setInputError("Masukkan angka berat badan yang valid.");
-      return;
-    }
-    if (val < 20 || val > 300) {
-      setInputError("Berat badan harus antara 20 – 300 kg.");
-      return;
-    }
-
-    const today = new Date().toISOString().split("T")[0];
-    const newEntry = {
-      id: Date.now(),
-      date: today,
-      weight: val,
-      note: inputNote.trim(),
-    };
-
-    setWeightLog(prev => [...prev, newEntry]);
-    setShowWeightModal(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
-  };
 
   // --- Chart helpers ---
   // Ambil 7 entri terakhir untuk chart
@@ -147,7 +95,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff]">
+    <div className="min-h-screen bg-[var(--color-bg)]">
       <Navbar />
 
       {/* Main Content */}
@@ -181,7 +129,7 @@ export default function Profile() {
                   <div>
                     <h1 className="text-2xl lg:text-3xl font-bold text-[#191c20] font-lexend">{user.name}</h1>
                     <p className="text-[#6d7b6c] font-jakarta">
-                      {user.location} • Bergabung sejak {user.joinDate}
+                      Bergabung sejak {user.joinDate}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 bg-yellow-50 mx-4 px-10 py-1 rounded-full w-fit">
@@ -196,11 +144,7 @@ export default function Profile() {
               {/* Streak & Actions */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="flex items-center gap-2 bg-orange-50 px-14 py-2 rounded-xl">
-                  <Flame className="w-5 h-5 text-orange-500" />
-                  <div>
-                    <p className="text-lg font-bold text-orange-600 font-lexend">{user.streak}</p>
-                    <p className="text-xs text-orange-500 font-jakarta">Hari</p>
-                  </div>
+                  <Streak count={user.streak} variant="compact" />
                 </div>
                 <div className="flex gap-2">
                   <button className="flex items-center gap-2 px-4 py-2 bg-[#006e2f] text-white rounded-xl hover:bg-[#005823] transition-colors font-jakarta">
@@ -215,9 +159,7 @@ export default function Profile() {
           {/* Catat Berat Badan Banner */}
           <div className="bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff] mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center flex-shrink-0">
-                <Scale className="w-6 h-6 text-[#006e2f]" />
-              </div>
+             
               <div>
                 <p className="font-semibold text-[#191c20] font-lexend">Catat Berat Badan Hari Ini</p>
                 <p className="text-sm text-[#6d7b6c] font-jakarta">
@@ -227,7 +169,7 @@ export default function Profile() {
               </div>
             </div>
             <button
-              onClick={openWeightModal}
+              onClick={() => setShowWeightModal(true)}
               data-testid="btn-catat-berat"
               className="flex items-center gap-2 px-5 py-3 bg-[#006e2f] text-white rounded-xl hover:bg-[#005823] transition-colors font-semibold font-jakarta whitespace-nowrap"
             >
@@ -264,7 +206,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Chart Visualization — dinamis dari weightLog */}
+              {/* Chart Visualization dinamis dari weightLog */}
               <div className="relative h-48 mb-6">
                 <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="w-full h-full" preserveAspectRatio="none">
                   <defs>
@@ -297,11 +239,11 @@ export default function Profile() {
 
               {/* Weight Stats */}
               <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-4 bg-[#f8f9ff] rounded-2xl">
+                <div className="text-center p-4 border rounded-2xl">
                   <p className="text-xs text-[#6d7b6c] font-jakarta mb-1">Berat Awal</p>
                   <p className="text-xl font-bold text-[#191c20] font-lexend">{firstEntry.weight} kg</p>
                 </div>
-                <div className="text-center p-4 bg-green-50 rounded-2xl border border-green-100">
+                <div className="text-center p-4 rounded-2xl border ">
                   <p className="text-xs text-green-600 font-jakarta mb-1">Sekarang</p>
                   <p className="text-xl font-bold text-green-700 font-lexend">{currentWeight} kg</p>
                   {prevEntry && (
@@ -315,7 +257,7 @@ export default function Profile() {
                     </p>
                   )}
                 </div>
-                <div className="text-center p-4 bg-[#f8f9ff] rounded-2xl">
+                <div className="text-center p-4 border rounded-2xl">
                   <p className="text-xs text-[#6d7b6c] font-jakarta mb-1">Target</p>
                   <p className="text-xl font-bold text-[#191c20] font-lexend">{TARGET_WEIGHT} kg</p>
                 </div>
@@ -345,9 +287,7 @@ export default function Profile() {
               {/* Progress ke Target */}
               <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                    <Scale className="w-5 h-5 text-[#006e2f]" />
-                  </div>
+                  
                   <div>
                     <p className="text-xs text-[#6d7b6c] font-jakarta">Sisa menuju target</p>
                     <p className="text-xl font-bold text-[#006e2f] font-lexend">
@@ -371,7 +311,7 @@ export default function Profile() {
                 </div>
               </div>
 
-              {/* Calories Card */}
+              {/* Calories card */}
               <div className="bg-gradient-to-br from-[#006e2f] to-[#22c55e] rounded-3xl p-6 text-white">
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center mb-4">
                   <FireIcon className="w-6 h-6" />
@@ -384,179 +324,49 @@ export default function Profile() {
           </div>
 
           {/* Settings Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Account Management */}
-            <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
-              <h3 className="text-lg font-bold text-[#191c20] font-lexend mb-4">Manajemen Akun</h3>
-              <div className="space-y-2">
-                {menuItems.map((item) => (
-                  <button
-                    key={item.id}
-                    onClick={item.action}
-                    className="w-full flex items-center gap-4 p-4 rounded-2xl hover:bg-[#f8f9ff] transition-colors text-left"
-                  >
-                    <item.Icon className="w-5 h-5 text-[#6d7b6c]" />
-                    <span className="flex-1 font-jakarta text-[#191c20]">{item.label}</span>
-                    <ChevronRight className="w-5 h-5 text-[#6d7b6c]" />
-                  </button>
-                ))}
-              </div>
-            </div>
+          <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
+            <h3 className="text-lg font-bold text-[#191c20] font-lexend mb-4">Pengaturan Akun</h3>
 
-            {/* App Preferences */}
-            <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
-              <h3 className="text-lg font-bold text-[#191c20] font-lexend mb-4">Preferensi Aplikasi</h3>
-              <div className="space-y-4">
-                {/* Dark Mode Toggle */}
-                <div className="flex items-center justify-between p-2">
-                  <div className="flex items-center gap-3">
-                    <Moon className="w-5 h-5 text-[#6d7b6c]" />
-                    <span className="font-jakarta text-[#191c20]">Mode Gelap</span>
-                  </div>
-                  <button
-                    onClick={() => setDarkMode(!darkMode)}
-                    className={`w-12 h-6 rounded-full transition-colors relative ${darkMode ? "bg-[#006e2f]" : "bg-[#c1c9bf]"}`}
-                  >
-                    <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${darkMode ? "translate-x-6" : "translate-x-0.5"}`} />
-                  </button>
-                </div>
+            <div className="space-y-1">
+              {/* Informasi Pribadi */}
+              <button
+                onClick={() => {}}
+                className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-[#f8f9ff] transition-colors text-left"
+              >
+                <User className="w-5 h-5 text-[#6d7b6c] flex-shrink-0" />
+                <span className="flex-1 font-jakarta text-[#191c20]">Informasi Pribadi</span>
+                <ChevronRight className="w-4 h-4 text-[#c1c9bf]" />
+              </button>
 
-                {/* Daily Reminder Toggle */}
-                <div className="flex items-center justify-between p-2">
-                  <div className="flex items-center gap-3">
-                    <Bell className="w-5 h-5 text-[#6d7b6c]" />
-                    <span className="font-jakarta text-[#191c20]">Peringatan Harian</span>
-                  </div>
-                  <button
-                    onClick={() => setDailyReminder(!dailyReminder)}
-                    className={`w-12 h-6 rounded-full transition-colors relative ${dailyReminder ? "bg-[#006e2f]" : "bg-[#c1c9bf]"}`}
-                  >
-                    <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform ${dailyReminder ? "translate-x-6" : "translate-x-0.5"}`} />
-                  </button>
-                </div>
+              
 
-                {/* Delete Account */}
-                <button className="w-full flex items-center gap-3 p-2 text-red-500 hover:bg-red-50 rounded-xl transition-colors mt-4">
-                  <Trash2 className="w-5 h-5" />
-                  <span className="font-jakarta">Hapus Akun</span>
-                  <AlertTriangle className="w-5 h-5 ml-auto text-red-400" />
-                </button>
-              </div>
+              {/* Logout */}
+              <button className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-orange-50 transition-colors text-left">
+                <LogOut className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                <span className="flex-1 font-jakarta text-orange-600">Keluar</span>
+                <ChevronRight className="w-4 h-4 text-orange-300" />
+              </button>
+
+              {/* Hapus Akun */}
+              <button className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-red-50 transition-colors text-left">
+                <Trash2 className="w-5 h-5 text-red-500 flex-shrink-0" />
+                <span className="flex-1 font-jakarta text-red-500">Hapus Akun</span>
+                
+              </button>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Modal Input Berat Badan */}
-      {showWeightModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl">
-            {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-[#e5eeff]">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
-                  <Scale className="w-5 h-5 text-[#006e2f]" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-[#191c20] font-lexend">Catat Berat Badan</h3>
-                  <p className="text-xs text-[#6d7b6c] font-jakarta">
-                    {new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={closeWeightModal}
-                className="w-9 h-9 rounded-xl bg-[#f8f9ff] flex items-center justify-center hover:bg-[#e5eeff] transition-colors"
-              >
-                <X className="w-5 h-5 text-[#6d7b6c]" />
-              </button>
-            </div>
-
-            {/* Body */}
-            <div className="p-6 space-y-5">
-              {/* Input berat */}
-              <div>
-                <label className="block text-sm font-semibold text-[#191c20] mb-2 font-lexend">
-                  Berat Badan (kg)
-                </label>
-                <div className="relative">
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="20"
-                    max="300"
-                    value={inputWeight}
-                    onChange={(e) => {
-                      setInputWeight(e.target.value);
-                      setInputError("");
-                    }}
-                    placeholder={`Terakhir: ${currentWeight} kg`}
-                    data-testid="input-berat"
-                    className={`w-full px-4 py-3 pr-14 rounded-xl border ${
-                      inputError ? "border-red-400 focus:ring-red-300" : "border-[#c1c9bf] focus:ring-[#006e2f]"
-                    } bg-white focus:outline-none focus:ring-2 focus:border-transparent font-jakarta text-[#191c20] text-lg`}
-                  />
-                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6d7b6c] font-jakarta text-sm">
-                    kg
-                  </span>
-                </div>
-                {inputError && (
-                  <p className="text-xs text-red-500 mt-1.5 font-jakarta">{inputError}</p>
-                )}
-              </div>
-
-              {/* Perbandingan cepat */}
-              {inputWeight && !isNaN(parseFloat(inputWeight)) && (
-                <div className="bg-[#f8f9ff] rounded-xl p-3 flex justify-between text-sm font-jakarta">
-                  <span className="text-[#6d7b6c]">Perubahan dari sebelumnya:</span>
-                  <span className={`font-semibold ${
-                    parseFloat(inputWeight) < currentWeight
-                      ? "text-green-600"
-                      : parseFloat(inputWeight) > currentWeight
-                      ? "text-orange-500"
-                      : "text-[#6d7b6c]"
-                  }`}>
-                    {parseFloat(inputWeight) > currentWeight ? "+" : ""}
-                    {(parseFloat(inputWeight) - currentWeight).toFixed(1)} kg
-                  </span>
-                </div>
-              )}
-
-              {/* Catatan opsional */}
-              <div>
-                <label className="block text-sm font-semibold text-[#191c20] mb-2 font-lexend">
-                  Catatan <span className="font-normal text-[#6d7b6c]">(opsional)</span>
-                </label>
-                <textarea
-                  value={inputNote}
-                  onChange={(e) => setInputNote(e.target.value)}
-                  placeholder="Contoh: setelah olahraga, sebelum makan..."
-                  rows={2}
-                  data-testid="input-catatan"
-                  className="w-full px-4 py-3 rounded-xl border border-[#c1c9bf] bg-white focus:outline-none focus:ring-2 focus:ring-[#006e2f] focus:border-transparent font-jakarta resize-none text-sm text-[#191c20]"
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3 pt-1">
-                <button
-                  onClick={closeWeightModal}
-                  className="flex-1 py-3 border-2 border-[#c1c9bf] text-[#6d7b6c] rounded-xl font-semibold font-jakarta hover:bg-[#f8f9ff] transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={handleSaveWeight}
-                  data-testid="btn-simpan-berat"
-                  className="flex-1 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-jakarta hover:bg-[#005823] transition-colors"
-                >
-                  Simpan
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Weight Input Modal */}
+      <WeightInputModal
+        isOpen={showWeightModal}
+        onClose={() => setShowWeightModal(false)}
+        onSuccess={handleWeightSuccess}
+        currentWeight={currentWeight}
+        allowNote={true}
+        allowMultiplePerDay={true}
+      />
     </div>
   );
 }

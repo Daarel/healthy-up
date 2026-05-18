@@ -8,13 +8,13 @@ export default function OnboardingStep2() {
   const [age, setAge] = useState(25);
 
   return (
-    <div className="h-screen flex bg-[#f8f9ff] overflow-hidden">
+    <div className="h-screen flex bg-[var(--color-bg)] overflow-hidden">
       {/* Left Side - Form */}
       <div className="w-full lg:w-1/2 flex flex-col px-6 lg:px-16 overflow-y-auto">
         {/* Back Button */}
         <button
           onClick={() => navigate("/onboarding/1")}
-          className="flex items-center gap-2 text-[#6d7b6c] hover:text-[#191c20] transition-colors pt-6 pb-2 w-fit"
+          className="flex items-center gap-2 text-[#6d7b6c] hover:text-[#005823] transition-colors pt-6 pb-2 w-fit"
         >
           <ArrowLeft className="w-5 h-5" />
           <span className="font-jakarta text-sm">Kembali</span>
@@ -24,7 +24,7 @@ export default function OnboardingStep2() {
         <div className="w-full max-w-md mx-auto mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-[#6d7b6c] font-jakarta">Langkah 2</span>
-            <span className="text-xs font-medium text-[#6d7b6c] font-jakarta">5</span>
+        
           </div>
           <div className="h-2 bg-[#e5eeff] rounded-full overflow-hidden">
             <div className="h-full w-[40%] bg-[#006e2f] rounded-full transition-all duration-500"></div>
@@ -141,10 +141,10 @@ export default function OnboardingStep2() {
       </div>
 
       {/* Right Side - Image */}
-      <div className="hidden lg:block lg:w-1/2 bg-[#e5eeff] p-6">
-        <div className="h-full rounded-[32px] overflow-hidden relative">
+      <div className="hidden lg:block lg:w-1/2 p-6">
+        <div className="h-full rounded-3xl overflow-hidden relative">
           <img
-            src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1200&h=1600&fit=crop"
+            src="/public/onboarding/2.jpg"
             alt="Fitness"
             className="w-full h-full object-cover"
           />

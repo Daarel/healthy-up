@@ -1,19 +1,15 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { 
   Star, 
-  Flame, 
-  Crown, 
   BadgeCheck, 
   Gift, 
   CheckCircle2, 
-  X,
-  ChevronRight
+  X
 } from "lucide-react";
 import Navbar from "../components/Navbar";
+import Streak from "../components/ui/streak";
 
 export default function Hadiah() {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("semua");
   const [showRedeemModal, setShowRedeemModal] = useState(false);
   const [selectedVoucher, setSelectedVoucher] = useState(null);
@@ -66,7 +62,7 @@ export default function Hadiah() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f8f9ff]">
+    <div className="min-h-screen bg-[var(--color-bg)]">
       <Navbar />
 
       {/* Main Content */}
@@ -83,8 +79,8 @@ export default function Hadiah() {
               </p>
             </div>
             <div className="flex items-center gap-3 bg-white px-5 py-3 rounded-2xl border border-[#e5eeff] shadow-sm">
-              <div className="w-10 h-10 bg-[#006e2f] rounded-xl flex items-center justify-center">
-                <Star className="w-5 h-5 text-white" />
+              <div className="w-10 h-10 flex items-center justify-center">
+                <Star className="w-8 h-8 text-[#006e2f]" />
               </div>
               <div>
                 <p className="text-xs text-[#6d7b6c] font-jakarta uppercase tracking-wide">Total Poin Kamu</p>
@@ -99,7 +95,7 @@ export default function Hadiah() {
             <div className="lg:col-span-2 bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-semibold mb-2">
+                  <div className="inline-flex items-center gap-2 text-orange-700 py-1 rounded-full text-md font-extrabold mb-2">
                     LEVEL {currentLevel}
                   </div>
                   <h3 className="text-xl font-bold text-[#191c20] font-lexend">Pejuang Sehat</h3>
@@ -107,19 +103,13 @@ export default function Hadiah() {
                     Dapatkan {nextLevelPoints - currentPoints} poin lagi untuk naik ke Level {currentLevel + 1}: <span className="font-semibold text-[#191c20]">Maratonis</span>
                   </p>
                 </div>
-                <div className="flex items-center gap-2 bg-orange-50 px-3 py-2 rounded-xl">
-                  <Flame className="w-5 h-5 text-orange-500" />
-                  <div>
-                    <p className="text-lg font-bold text-orange-600 font-lexend">{streak}</p>
-                    <p className="text-xs text-orange-500 font-jakarta">Hari Streak</p>
-                  </div>
-                </div>
+                <Streak count={streak} variant="compact" />
               </div>
               {/* Progress Bar */}
               <div className="relative">
                 <div className="h-3 bg-[#e5eeff] rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-[#22c55e] to-[#006e2f] rounded-full transition-all duration-500"
+                    className="h-full bg-[#006e2f] rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, Math.max(0, progress))}%` }}
                   ></div>
                 </div>
@@ -131,16 +121,11 @@ export default function Hadiah() {
             </div>
 
             {/* Elite Badge Card */}
-            <div className="bg-gradient-to-br from-[#006e2f] to-[#22c55e] rounded-3xl p-6 text-white shadow-lg">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mb-3">
-                  <Crown className="w-8 h-8" />
-                </div>
-                <h3 className="text-lg font-bold font-lexend">Lencana Elite</h3>
-                <p className="text-sm text-white/80 font-jakarta mt-1">
-                  Kamu masuk ke dalam 5% pengguna teraktif bulan ini!
-                </p>
-              </div>
+            <div className="bg-[#006e2f] rounded-3xl p-6 text-white shadow-lg flex flex-col justify-center">
+              <h3 className="text-lg font-bold font-lexend mb-2">Lencana Elite</h3>
+              <p className="text-sm text-white/80 font-jakarta">
+                Kamu masuk ke dalam 5% pengguna teraktif bulan ini!
+              </p>
             </div>
           </div>
 

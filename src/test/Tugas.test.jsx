@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import Tugas from './Tugas';
+import Tugas from '../pages/Tugas';
 
 const renderTugas = () => {
   return render(
@@ -74,8 +74,6 @@ describe('Tugas Page', () => {
   it('statistik Selesai menampilkan angka yang benar (2 dari 6 hari ini)', () => {
     renderTugas();
     // Di tab hari-ini ada 2 tugas completed (Minum air & Stretching)
-    const statsCards = screen.getAllByRole('paragraph', { hidden: true });
-    // Cari angka 2 di area statistik
     expect(screen.getByText('2')).toBeInTheDocument();
   });
 
@@ -104,12 +102,8 @@ describe('Tugas Page', () => {
     renderTugas();
     const uploadButtons = screen.getAllByText('Upload');
     fireEvent.click(uploadButtons[0]);
-    // Pastikan modal terbuka
     expect(screen.getByText('Upload Bukti')).toBeInTheDocument();
-    // Temukan tombol close (X) di modal
     const closeButtons = screen.getAllByRole('button');
-    const xButton = closeButtons.find(btn => btn.querySelector('svg'));
-    // Klik tombol close modal (yang terakhir di area modal)
     const modalXButtons = closeButtons.filter(btn =>
       btn.className.includes('w-10') && btn.className.includes('h-10')
     );

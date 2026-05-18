@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import Hadiah from './Hadiah';
+import Hadiah from '../pages/Hadiah';
 
 const renderHadiah = () => {
   return render(
@@ -30,7 +30,7 @@ describe('Hadiah Page', () => {
     renderHadiah();
     expect(screen.getByText('Total Poin Kamu')).toBeInTheDocument();
     // 12450 diformat dengan toLocaleString - mungkin muncul lebih dari sekali
-    expect(screen.getAllByText(/12[\.,]450/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/12[.,]450/).length).toBeGreaterThanOrEqual(1);
   });
 
   it('menampilkan info level pengguna', () => {

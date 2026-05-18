@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Navbar from './Navbar';
@@ -19,7 +19,6 @@ describe('Navbar Component', () => {
   it('menampilkan brand HealthyUp di desktop nav', () => {
     renderNavbar();
     expect(screen.getByText('HealthyUp')).toBeInTheDocument();
-    expect(screen.getByText('Weight Management')).toBeInTheDocument();
   });
 
   it('menampilkan semua item navigasi (Beranda, Tugas, Hadiah, Profil)', () => {
