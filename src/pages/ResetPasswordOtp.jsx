@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { maskEmail } from "../lib/utils";
 
 const OTP_LENGTH = 6;
 const RESEND_COOLDOWN = 60; // detik
@@ -85,17 +86,15 @@ export default function ResetPasswordOtp() {
 
         <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
           {/* Icon */}
-          <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mb-6">
-            <ShieldCheck className="w-8 h-8 text-[#006e2f]" />
-          </div>
+         
 
-          <h2 className="text-3xl font-bold text-[#191c20] font-lexend mb-2">
+          <h2 className="text-3xl text-left mb-10 font-bold text-[#005823] font-lexend mb-2">
             Verifikasi OTP
           </h2>
           <p className="text-[#6d7b6c] font-jakarta mb-2">
-            Masukkan 6 digit kode yang dikirim ke
+            Kode OTP telah dikirim ke
           </p>
-          <p className="font-semibold text-[#191c20] font-jakarta mb-8">{email}</p>
+          <p className="font-semibold text-[#191c20] font-jakarta mb-8">{maskEmail(email, 3)}</p>
 
           <form onSubmit={handleSubmit} noValidate>
             {/* OTP Boxes */}

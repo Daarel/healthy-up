@@ -71,19 +71,7 @@ export default function OnboardingStep3() {
             </div>
           </div>
 
-          {/* Info Cards */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-[#e5eeff] rounded-2xl p-4 text-center">
-              <Scale className="w-6 h-6 text-[#006e2f] mx-auto mb-2" />
-              <p className="text-xs text-[#6d7b6c] font-jakarta">Berat Ideal</p>
-              <p className="text-lg font-bold text-[#191c20] font-lexend">58 - 71 kg</p>
-            </div>
-            <div className="bg-[#e5eeff] rounded-2xl p-4 text-center">
-              <Ruler className="w-6 h-6 text-[#006e2f] mx-auto mb-2" />
-              <p className="text-xs text-[#6d7b6c] font-jakarta">Tinggi</p>
-              <p className="text-lg font-bold text-[#191c20] font-lexend">170 cm</p>
-            </div>
-          </div>
+         
 
           <button
             onClick={() => navigate("/onboarding/4")}

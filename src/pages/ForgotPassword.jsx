@@ -1,12 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Mail, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
 
   const validate = () => {
     if (!email.trim()) return "Email tidak boleh kosong.";
@@ -20,11 +19,9 @@ export default function ForgotPassword() {
     const err = validate();
     if (err) { setError(err); return; }
     setError("");
-    setSubmitted(true);
     // TODO: panggil API kirim OTP ke email
-    // Simpan email ke sessionStorage agar bisa dipakai di step berikutnya
     sessionStorage.setItem("reset_email", email);
-    setTimeout(() => navigate("/reset-password/otp"), 1500);
+    navigate("/reset-password/otp");
   };
 
   return (
@@ -40,9 +37,6 @@ export default function ForgotPassword() {
         </button>
 
         <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
-          {/* Icon */}
-          
-
           <h2 className="text-3xl font-bold text-[#005823] font-lexend mb-2">
             Lupa Password?
           </h2>
@@ -50,54 +44,44 @@ export default function ForgotPassword() {
             Masukkan email yang terdaftar. Kami akan mengirimkan kode verifikasi untuk mereset password kamu.
           </p>
 
-          {submitted ? (
-            <div className="bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
-              <p className="font-semibold text-[#006e2f] font-lexend mb-1">Email terkirim!</p>
-              <p className="text-sm text-[#6d7b6c] font-jakarta">
-                Kode OTP dikirim ke <span className="font-semibold text-[#191c20]">{email}</span>.
-                Mengalihkan ke halaman verifikasi...
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} noValidate className="space-y-5">
-              <div>
-                <label
-                  htmlFor="forgot-email"
-                  className="block text-sm font-semibold text-[#191c20] mb-2 font-lexend"
-                >
-                  Alamat Email
-                </label>
-                <input
-                  id="forgot-email"
-                  type="email"
-                  inputMode="email"
-                  autoComplete="email"
-                  placeholder="nama@email.com"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    setError("");
-                  }}
-                  className={`w-full px-4 py-3 rounded-xl border ${
-                    error
-                      ? "border-red-400 focus:ring-red-300"
-                      : "border-[#c1c9bf] focus:ring-[#006e2f]"
-                  } bg-white focus:outline-none focus:ring-2 focus:border-transparent font-jakarta`}
-                />
-                {error && (
-                  <p className="mt-1.5 text-xs text-red-500 font-jakarta">{error}</p>
-                )}
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-[#006e2f] text-white font-semibold py-4 rounded-xl hover:bg-[#005823] transition-colors font-lexend flex items-center justify-center gap-2"
+          <form onSubmit={handleSubmit} noValidate className="space-y-5">
+            <div>
+              <label
+                htmlFor="forgot-email"
+                className="block text-sm font-semibold text-[#191c20] mb-2 font-lexend"
               >
-                Kirim Kode OTP
-                <ArrowRight className="w-5 h-5" />
-              </button>
-            </form>
-          )}
+                Alamat Email
+              </label>
+              <input
+                id="forgot-email"
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                placeholder="nama@email.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setError("");
+                }}
+                className={`w-full px-4 py-3 rounded-xl border ${
+                  error
+                    ? "border-red-400 focus:ring-red-300"
+                    : "border-[#c1c9bf] focus:ring-[#006e2f]"
+                } bg-white focus:outline-none focus:ring-2 focus:border-transparent font-jakarta`}
+              />
+              {error && (
+                <p className="mt-1.5 text-xs text-red-500 font-jakarta">{error}</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-[#006e2f] text-white font-semibold py-4 rounded-xl hover:bg-[#005823] transition-colors font-lexend flex items-center justify-center gap-2"
+            >
+              Kirim Kode OTP
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </form>
         </div>
 
         <div className="h-8" />
