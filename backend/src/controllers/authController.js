@@ -131,50 +131,120 @@ const logout = async (req, res) => {
 };
 
 /**
- * @desc    Reset password user
+ * @desc    Request OTP for password reset
+ * @route   POST /api/v1/auth/forgot-password
+ * @access  Public
+ */
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Email is required" });
+    }
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "User not found" });
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
+
+    // 4. Simpan ke database (Upsert: Timpa yang lama kalau ada, atau buat baru)
+    await prisma.otpCode.upsert({
+      where: { email: email },
+      update: {
+        code: otpCode,
+        expiresAt: expiresAt,
+      },
+      create: {
+        email: email,
+        code: otpCode,
+        expiresAt: expiresAt,
+      },
+    });
+
+    console.log(`[SIMULASI EMAIL] OTP untuk ${email} adalah: ${otpCode}`);
+
+    res.status(200).json({
+      status: "success",
+      message: "OTP has been sent to your email (expires in 1 minute)",
+    });
+  } catch (err) {
+    console.error("Error at forgotPassword", err);
+    res.status(500).json({ status: "error", message: "Internal server error" });
+  }
+};
+
+/**
+ * @desc    Verify OTP and reset password
  * @route   POST /api/v1/auth/reset-password
  * @access  Public
  */
 const resetPassword = async (req, res) => {
   try {
-    const { email, password, confirmedPassword } = req.body;
+    const { email, otp, newPassword, confirmedPassword } = req.body;
 
-    if (!email || !password || !confirmedPassword) {
+    if (!email || !otp || !newPassword || !confirmedPassword) {
       return res.status(400).json({
         status: "error",
-        message: "Email, password, and confirmed password are required",
+        message: "ALl fields are required",
       });
     }
 
-    if (password !== confirmedPassword) {
+    if (newPassword !== confirmedPassword) {
       return res.status(400).json({
         status: "error",
         message: "Passwords do not match",
       });
     }
 
-    const user = await prisma.user.findUnique({
+    const otpRecord = await prisma.otpCode.findUnique({
       where: { email: email },
     });
 
-    if (!user) {
-      return res.status(404).json({
+    if (!otpRecord) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid or missing OTP" });
+    }
+
+    if (otpRecord.code !== otp) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Incorrect OTP code" });
+    }
+
+    if (new Date() > otpRecord.expiresAt) {
+      return res.status(400).json({
         status: "error",
-        message: "User not found",
+        message: "OTP has expired. Please request a new one.",
       });
     }
 
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-    await prisma.user.update({
-      where: { email: email },
-      data: { password: hashedPassword },
-    });
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { email: email },
+        data: { password: hashedPassword },
+      }),
+
+      prisma.otpCode.delete({
+        where: { email: email },
+      }),
+    ]);
 
     res.status(200).json({
       status: "success",
-      message: "Password telah berhasil diubah",
+      message: "Password has successfully changed",
     });
   } catch (err) {
     console.error("Error at resetPassword", err);
