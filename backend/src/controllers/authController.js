@@ -130,4 +130,59 @@ const logout = async (req, res) => {
   }
 };
 
-export { register, login, logout };
+/**
+ * @desc    Reset password user
+ * @route   POST /api/v1/auth/reset-password
+ * @access  Public
+ */
+const resetPassword = async (req, res) => {
+  try {
+    const { email, password, confirmedPassword } = req.body;
+
+    if (!email || !password || !confirmedPassword) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email, password, and confirmed password are required",
+      });
+    }
+
+    if (password !== confirmedPassword) {
+      return res.status(400).json({
+        status: "error",
+        message: "Passwords do not match",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: email },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        status: "error",
+        message: "User not found",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    await prisma.user.update({
+      where: { email: email },
+      data: { password: hashedPassword },
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Password telah berhasil diubah",
+    });
+  } catch (err) {
+    console.error("Error at resetPassword", err);
+    res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+};
+
+export { register, login, logout, resetPassword };
