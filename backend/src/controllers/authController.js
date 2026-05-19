@@ -255,4 +255,4 @@ const resetPassword = async (req, res) => {
   }
 };
 
-export { register, login, logout, resetPassword };
+export { register, login, logout, forgotPassword, resetPassword };
