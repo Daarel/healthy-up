@@ -58,6 +58,7 @@ model User {
   healthProfile HealthProfile?
   missions      Mission[]
   userRewards   UserReward[]
+  weightLogs    WeightLog[]
 
   @@index([email])
   @@index([level])
@@ -67,11 +68,9 @@ model HealthProfile {
   id             String     @id @default(uuid()) @db.Uuid
   userId         String     @unique @db.Uuid
   gender         GenderType
-  dateOfBirth    DateTime   @db.Date
   weightKg       Decimal    @db.Decimal(5, 2)
   heightCm       Decimal    @db.Decimal(5, 2)
   goalWeight     Decimal    @db.Decimal(5, 2)
-  medicalHistory String?    @db.Text
   updatedAt      DateTime   @default(now()) @updatedAt @db.Timestamptz
 
   // Relations
@@ -135,4 +134,14 @@ model UserReward {
   reward Reward @relation(fields: [rewardId], references: [id], onDelete: Restrict)
 
   @@index([userId, rewardId])
+}
+
+model WeightLog {
+  id       String   @id @default(uuid()) @db.Uuid
+  userId   String   @db.Uuid
+  weight   Float
+  loggedAt DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
