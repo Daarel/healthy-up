@@ -1,4 +1,3 @@
-
 /**
  * @desc    Onboarding User
  * @route   POST /api/v1/healthyProfiles/

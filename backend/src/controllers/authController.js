@@ -1,16 +1,16 @@
-import prisma from '../lib/prisma.js';
-import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { z } from 'zod';
 
-import { sendEmail } from '../utils/sendEmail.js';
-import { generateToken } from '../utils/generateToken.js';
+import prisma from '../lib/prisma.js';
 import {
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
-  forgotPasswordSchema,
   resetPasswordSchema,
 } from '../schemas/authSchema.js';
+import { generateToken } from '../utils/generateToken.js';
+import { sendEmail } from '../utils/sendEmail.js';
 
 /**
  * * @desc    Sign up user account
@@ -325,4 +325,4 @@ const resetPassword = async (req, res) => {
   }
 };
 
-export { register, login, logout, forgotPassword, resetPassword };
+export { forgotPassword, login, logout, register, resetPassword };

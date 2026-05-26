@@ -1,11 +1,11 @@
-import express from 'express';
-import { config } from 'dotenv';
 import cors from 'cors';
+import { config } from 'dotenv';
+import express from 'express';
 import helmet from 'helmet';
 
 // routes
 import authRoutes from './routes/authRoutes.js';
-import healthProfilesRoutes from './routes/healthProfilesRoutes.js'
+import healthProfilesRoutes from './routes/healthProfilesRoutes.js';
 
 config();
 const app = express();

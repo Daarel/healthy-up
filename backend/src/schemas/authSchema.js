@@ -73,8 +73,8 @@ const resetPasswordSchema = z
   });
 
 export {
+  forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resetPasswordSchema,
-  forgotPasswordSchema,
 };
