@@ -67,6 +67,7 @@ model HealthProfile {
   id         String     @id @default(uuid()) @db.Uuid
   userId     String     @unique @db.Uuid
   gender     GenderType
+  age        Int
   weightKg   Decimal    @db.Decimal(5, 2)
   heightCm   Decimal    @db.Decimal(5, 2)
   goalWeight Decimal    @db.Decimal(5, 2)
