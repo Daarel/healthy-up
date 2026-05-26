@@ -69,3 +69,10 @@ const resetPasswordSchema = z
     message: 'Password dan konfirmasi password tidak cocok',
     path: ['confirmedPassword'],
   });
+
+export {
+  loginSchema,
+  registerSchema,
+  resetPasswordSchema,
+  forgotPasswordSchema,
+};
