@@ -1,28 +1,31 @@
-import prisma from "../lib/prisma.js";
-import bcrypt from "bcryptjs";
+import prisma from '../lib/prisma.js';
+import { z } from 'zod';
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+
+import { sendEmail } from '../utils/sendEmail.js';
 
 /**
- * @desc    Sign up user account
- * @route   POST /api/v1/auth/register
- * @access  Public
+ * * @desc    Sign up user account
+ * ! @route   POST /api/v1/auth/register
+ * ? @access  Public
  */
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const validatedData = registerSchema.parse(req.body);
+    const { name, email, password } = validatedData;
 
-    // check if user already exists
     const userExists = await prisma.user.findUnique({
       where: { email: email },
     });
 
     if (userExists) {
       return res.status(400).json({
-        status: "error",
-        message: "Email is already registered",
+        status: 'error',
+        message: 'Email is already registered',
       });
     }
 
-    // hashing user password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -37,7 +40,7 @@ const register = async (req, res) => {
     const token = generateToken(user.id, res);
 
     res.status(201).json({
-      status: "success",
+      status: 'success',
       data: {
         user: {
           id: user.id,
@@ -48,22 +51,33 @@ const register = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Error at register", err);
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        status: 'fail',
+        errors: err.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message,
+        })),
+      });
+    }
+
+    console.error('Error at register', err);
     res.status(500).json({
-      status: "error",
-      message: "Internal server error",
+      status: 'error',
+      message: 'Internal server error',
     });
   }
 };
 
 /**
- * @desc    Sign in user account
- * @route   POST /api/v1/auth/login
- * @access  Public
+ * * @desc    Sign in user account
+ * ! @route   POST /api/v1/auth/login
+ * ? @access  Public
  */
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const validatedData = loginSchema.parse(req.body);
+    const { email, password } = validatedData;
 
     const user = await prisma.user.findUnique({
       where: { email: email },
@@ -72,91 +86,99 @@ const login = async (req, res) => {
     if (!user) {
       return res
         .status(401)
-        .json({ status: "error", message: "Invalid email and password " });
+        .json({ status: 'error', message: 'Invalid email and password' });
     }
 
-    // verify the password
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
       return res
         .status(401)
-        .json({ status: "error", message: "Invalid email and password" });
+        .json({ status: 'error', message: 'Invalid email and password' });
     }
 
     const token = generateToken(user.id, res);
 
-    res.status(201).json({
-      status: "success",
+    res.status(200).json({
+      status: 'success',
       data: {
         user: {
           id: user.id,
-          email: email,
+          name: user.name,
+          email: user.email,
         },
         token,
       },
     });
   } catch (err) {
-    console.error("Error at login", err);
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        status: 'fail',
+        errors: err.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message,
+        })),
+      });
+    }
+
+    console.error('Error at login', err);
     res.status(500).json({
-      status: "error",
-      message: "Internal server error",
+      status: 'error',
+      message: 'Internal server error',
     });
   }
 };
 
 /**
- * @desc    log out user account
- * @route   POST /api/v1/auth/logout
- * @access  Public
+ * * @desc    log out user account
+ * ! @route   POST /api/v1/auth/logout
+ * ? @access  Public
  */
 const logout = async (req, res) => {
   try {
-    res.cookie("jwt", "", {
+    res.cookie('jwt', '', {
       httpOnly: true,
-      expires: new Date(),
+      expires: new Date(0),
     });
 
     res.status(200).json({
-      status: "success",
-      message: "logged out successfully",
+      status: 'success',
+      message: 'logged out successfully',
     });
   } catch (err) {
-    console.error("Error at logged out", err);
+    console.error('Error at logged out', err);
     res.status(500).json({
-      status: "error",
-      message: "Internal server error",
+      status: 'error',
+      message: 'Internal server error',
     });
   }
 };
 
 /**
- * @desc    Request OTP for password reset
- * @route   POST /api/v1/auth/forgot-password
- * @access  Public
+ * * @desc    Request OTP for password reset
+ * ! @route   POST /api/v1/auth/forgot-password
+ * ? @access  Public
  */
 const forgotPassword = async (req, res) => {
   try {
-    const { email } = req.body;
-
-    if (!email) {
-      return res
-        .status(400)
-        .json({ status: "error", message: "Email is required" });
-    }
+    const validatedData = forgotPasswordSchema.parse(req.body);
+    const { email } = validatedData;
 
     const user = await prisma.user.findUnique({ where: { email } });
+
+    const successMessage =
+      'Jika email terdaftar di sistem kami, kode OTP telah dikirimkan';
+
     if (!user) {
-      return res
-        .status(404)
-        .json({ status: "error", message: "User not found" });
+      return res.status(200).json({
+        status: 'success',
+        message: successMessage,
+      });
     }
 
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
+    const otpCode = crypto.randomInt(100000, 999999).toString();
     const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
 
-    // 4. Simpan ke database (Upsert: Timpa yang lama kalau ada, atau buat baru)
     await prisma.otpCode.upsert({
       where: { email: email },
       update: {
@@ -170,40 +192,68 @@ const forgotPassword = async (req, res) => {
       },
     });
 
-    console.log(`[SIMULASI EMAIL] OTP untuk ${email} adalah: ${otpCode}`);
+    const message = `Kode OTP Anda adalah ${otpCode}. Kode ini akan kadaluwarsa dalam 1 menit. Jangan bagikan kode ini kepada siapa pun.`;
 
-    res.status(200).json({
-      status: "success",
-      message: "OTP has been sent to your email (expires in 1 minute)",
-    });
+    const htmlMessage = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+        <h2>Permintaan Reset Password HealthyUp</h2>
+        <p>Anda menerima email ini karena ada permintaan untuk mereset password akun Anda.</p>
+        <p>Kode OTP Anda adalah:</p>
+        <h1 style="background: #f4f4f4; padding: 10px; display: inline-block; letter-spacing: 5px;">${otpCode}</h1>
+        <p style="color: red; font-size: 12px;">*Kode ini hanya berlaku selama 1 menit.</p>
+        <p>Jika Anda tidak meminta reset password, abaikan email ini.</p>
+      </div>
+    `;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Kode OTP Reset Password - HealthyUp',
+        message: message,
+        htmlMessage: htmlMessage,
+      });
+      res.status(200).json({
+        status: 'success',
+        message: successMessage,
+      });
+    } catch (emailErr) {
+      console.error('Email gagal dikirim:', emailErr);
+
+      await prisma.otpCode.delete({
+        where: { email: user.email },
+      });
+
+      return res.status(500).json({
+        status: 'error',
+        message: 'Gagal mengirim email OTP, silakan coba lagi nanti.',
+      });
+    }
   } catch (err) {
-    console.error("Error at forgotPassword", err);
-    res.status(500).json({ status: "error", message: "Internal server error" });
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        status: 'fail',
+        errors: err.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message,
+        })),
+      });
+    }
+
+    console.error('Error at forgotPassword', err);
+    res.status(500).json({ status: 'error', message: 'Internal server error' });
   }
 };
 
 /**
- * @desc    Verify OTP and reset password
- * @route   POST /api/v1/auth/reset-password
- * @access  Public
+ * * @desc    Verify OTP and reset password
+ * ! @route   POST /api/v1/auth/reset-password
+ * ? @access  Public
  */
 const resetPassword = async (req, res) => {
   try {
-    const { email, otp, newPassword, confirmedPassword } = req.body;
+    const validatedData = resetPasswordSchema.parse(req.body);
 
-    if (!email || !otp || !newPassword || !confirmedPassword) {
-      return res.status(400).json({
-        status: "error",
-        message: "ALl fields are required",
-      });
-    }
-
-    if (newPassword !== confirmedPassword) {
-      return res.status(400).json({
-        status: "error",
-        message: "Passwords do not match",
-      });
-    }
+    const { email, otp, newPassword } = validatedData;
 
     const otpRecord = await prisma.otpCode.findUnique({
       where: { email: email },
@@ -212,19 +262,22 @@ const resetPassword = async (req, res) => {
     if (!otpRecord) {
       return res
         .status(400)
-        .json({ status: "error", message: "Invalid or missing OTP" });
+        .json({ status: 'error', message: 'Invalid or missing OTP' });
     }
 
     if (otpRecord.code !== otp) {
       return res
         .status(400)
-        .json({ status: "error", message: "Incorrect OTP code" });
+        .json({ status: 'error', message: 'Incorrect OTP code' });
     }
 
     if (new Date() > otpRecord.expiresAt) {
+      // Hapus OTP yang sudah basi agar database bersih
+      await prisma.otpCode.delete({ where: { email: email } });
+
       return res.status(400).json({
-        status: "error",
-        message: "OTP has expired. Please request a new one.",
+        status: 'error',
+        message: 'OTP has expired. Please request a new one.',
       });
     }
 
@@ -243,14 +296,24 @@ const resetPassword = async (req, res) => {
     ]);
 
     res.status(200).json({
-      status: "success",
-      message: "Password has successfully changed",
+      status: 'success',
+      message: 'Password has successfully changed',
     });
   } catch (err) {
-    console.error("Error at resetPassword", err);
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        status: 'fail',
+        errors: err.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message,
+        })),
+      });
+    }
+
+    console.error('Error at resetPassword', err);
     res.status(500).json({
-      status: "error",
-      message: "Internal server error",
+      status: 'error',
+      message: 'Internal server error',
     });
   }
 };
