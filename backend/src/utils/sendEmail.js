@@ -2,7 +2,7 @@ import nodeMailer from 'nodemailer';
 
 const sendEmail = async (options) => {
   // 1. Buat transporter (menggunakan SMTP Gmail sebagai contoh)
-  const transporter = nodemailer.createTransport({
+  const transporter = nodeMailer.createTransport({
     host: process.env.EMAIL_HOST, // misal: smtp.gmail.com
     port: process.env.EMAIL_PORT, // misal: 465 atau 587
     secure: true, // true untuk port 465, false untuk port lainnya

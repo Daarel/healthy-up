@@ -1,4 +1,3 @@
-import prisma from "../lib/prisma.js";
 
 /**
  * @desc    Onboarding User

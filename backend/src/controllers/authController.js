@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 import { sendEmail } from '../utils/sendEmail.js';
+import { generateToken } from '../utils/generateToken.js';
 import {
   loginSchema,
   registerSchema,

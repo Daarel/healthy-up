@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 const registerSchema = z.strictObject({
   name: z
     .string({ required_error: 'Nama pengguna wajib diisi' })

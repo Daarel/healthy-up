@@ -1,12 +1,24 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import { defineConfig } from 'eslint/config';
+import eslintConfigPrettier from 'eslint-config-prettier';
 
 export default defineConfig([
   {
-    files: ['**/*.{js,mjs,cjs}'],
-    plugins: { js },
-    extends: ['js/recommended'],
-    languageOptions: { globals: { ...globals.node } },
+    ignores: ['**/node_modules/**', '**/generated/**', '**/prisma/**'],
   },
+
+  js.configs.recommended,
+
+  {
+    files: ['**/*.{js,mjs,cjs}'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {},
+  },
+
+  eslintConfigPrettier,
 ]);
