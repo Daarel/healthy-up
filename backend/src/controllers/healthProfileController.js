@@ -5,7 +5,7 @@ import { createHealthProfileSchema } from '../schemas/healthProfileSchema.js';
 
 /**
  * * @desc    Add Health Profile Data User
- * ! @route   POST /api/v1/healthyProfiles/
+ * ! @route   POST /api/v1/health-profiles/
  * ? @access  Public
  */
 const createProfile = async (req, res) => {

@@ -1,6 +1,6 @@
 import express from 'express';
 
-import { createProfile } from '../controllers/healthProfilesController';
+import { createProfile } from '../controllers/healthProfileController';
 
 const router = express.Router();
 
