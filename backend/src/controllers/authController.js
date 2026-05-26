@@ -4,6 +4,12 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 
 import { sendEmail } from '../utils/sendEmail.js';
+import {
+  loginSchema,
+  registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from '../schemas/authSchema.js';
 
 /**
  * * @desc    Sign up user account
