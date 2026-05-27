@@ -25,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 // API routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/health-profiles', healthProfileRoutes);
+app.use('/api/v1/users');
 
 app.listen(PORT, () => {
   console.log(`Server running on PORT ${PORT}`);
