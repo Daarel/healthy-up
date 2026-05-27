@@ -11,7 +11,7 @@ import { protect } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 router.post('/', protect, createProfile);
-router.get('/caloriesSummary', protect, getCaloriesSummary);
+router.get('/calories-summary', protect, getCaloriesSummary);
 
 router.use('/weight-logs', protect);
 router.route('/weight-logs').get(getWeightLog).post(createWeightLog);

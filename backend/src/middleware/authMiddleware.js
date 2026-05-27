@@ -13,7 +13,6 @@ const protect = async (req, res, next) => {
       // Ekstrak token
       token = req.headers.authorization.split(' ')[1];
 
-      // 3. Verifikasi token menggunakan secret key Anda
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       const currentUser = await prisma.user.findUnique({
