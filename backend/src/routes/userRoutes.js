@@ -5,12 +5,12 @@ import {
   getAllUsers,
   getUserProfile,
 } from '../controllers/userController.js';
-import { protect } from '../middleware/authMiddleware.js';
+import { adminOnly, protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 router.get('/profile', protect, getUserProfile);
-router.get('/all-users', getAllUsers);
+router.get('/all-users', adminOnly, getAllUsers);
 router.use('/user', protect);
 router.route('/user').get(getUserProfile).delete(deleteProfile);
 
