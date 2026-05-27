@@ -2,6 +2,9 @@ import cors from 'cors';
 import { config } from 'dotenv';
 import express from 'express';
 import helmet from 'helmet';
+import path from 'path';
+import swaggerUi from 'swagger-ui-express';
+import yaml from 'yamljs';
 
 // routes
 import authRoutes from './routes/authRoutes.js';
@@ -27,6 +30,13 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/health-profiles', healthProfileRoutes);
 app.use('/api/v1/users', userProfileRoutes);
+
+// API documentation
+const swaggerDocument = yaml.load(
+  path.join(process.cwd(), 'docs', 'swagger.yaml'),
+);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.listen(PORT, () => {
   console.log(`Server running on PORT ${PORT}`);
