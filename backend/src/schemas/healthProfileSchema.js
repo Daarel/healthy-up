@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const createHealthProfileSchema = z.strictObject({
+const createHealthProfileSchema = z.strictObject({
   gender: z.enum(['MALE', 'FEMALE'], {
     required_error: 'Jenis kelamin wajib dipilih',
     invalid_type_error: 'Format jenis kelamin tidak valid',
@@ -23,3 +23,16 @@ export const createHealthProfileSchema = z.strictObject({
     .min(10, { message: 'Target berat badan minimal 10 kg' })
     .max(300, { message: 'Target berat badan maksimal 300 kg' }),
 });
+
+const createWeightLogsSchema = z.strictObject({
+  weight: z
+    .number({
+      required_error: 'Berat badan wajib diisi',
+      invalid_type_error: 'Berat badan harus berupa angka (misal: 65.5)',
+    })
+    .positive({ message: 'Berat badan harus bernilai positif' })
+    .min(20, { message: 'Berat badan minimal 20 kg' })
+    .max(300, { message: 'Berat badan maksimal 300 kg' }),
+});
+
+export { createHealthProfileSchema, createWeightLogsSchema };

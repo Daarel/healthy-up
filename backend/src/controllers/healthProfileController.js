@@ -1,12 +1,15 @@
 import { z } from 'zod';
 
 import prisma from '../lib/prisma.js';
-import { createHealthProfileSchema } from '../schemas/healthProfileSchema.js';
+import {
+  createHealthProfileSchema,
+  createWeightLogsSchema,
+} from '../schemas/healthProfileSchema.js';
 
 /**
  * * @desc    Add Health Profile Data User
  * ! @route   POST /api/v1/health-profiles/
- * ? @access  Public
+ * ? @access  Private
  */
 const createProfile = async (req, res) => {
   try {
@@ -65,8 +68,8 @@ const createProfile = async (req, res) => {
 
 /**
  * * @desc    Get User Calories Data
- * ! @route   GET /api/v1/health-profiles/caloriesSummary
- * ? @access  Public
+ * ! @route   GET /api/v1/health-profiles/calories-summary
+ * ? @access  Private
  */
 const getCaloriesSummary = async (req, res) => {
   try {
@@ -136,16 +139,83 @@ const getCaloriesSummary = async (req, res) => {
 
 /**
  * * @desc    Get User Daily Weight Loss
- * ! @route   GET /api/v1/health-profiles/getWeightLog
- * ? @access  Public
+ * ! @route   GET /api/v1/health-profiles/weight-logs
+ * ? @access  Private
  */
+const getWeightLog = async (req, res) => {
+  try {
+    const userId = req.user.id;
 
+    const weightLogs = await prisma.weightLog.findMany({
+      where: {
+        userId: userId,
+      },
+      orderBy: {
+        loggedAt: 'desc',
+      },
+      select: {
+        id: true,
+        weight: true,
+        loggedAt: true,
+      },
+    });
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        weightLogs: weightLogs,
+      },
+    });
+  } catch (err) {
+    console.error('Gagal fetch weight logs:', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Gagal mengambil eiwayat berat badan',
+    });
+  }
+};
 
 /**
  * * @desc    Add User Daily Weight Loss
- * ! @route   POST /api/v1/health-profiles/getWeightLog
- * ? @access  Public
+ * ! @route   POST /api/v1/health-profiles/weight-logs
+ * ? @access  Private
  */
+const createWeightLog = async (req, res) => {
+  try {
+    const validatedData = createWeightLogsSchema.parse(req.body);
+    const userId = req.user.id;
 
+    const newWeightLog = await prisma.weightLog.create({
+      data: {
+        userId: userId,
+        weight: validatedData.weight,
+      },
+    });
 
-export { createProfile, getCaloriesSummary };
+    return res.status(201).json({
+      status: 'success',
+      message: 'Berat badan berhasil dicatat!',
+      data: {
+        weightLog: newWeightLog,
+      },
+    });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        status: 'fail',
+        errors: err.errors.map((e) => ({
+          field: e.path[0],
+          message: e.message,
+        })),
+      });
+    }
+
+    console.error('Error creating weight log:', err);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Terjadi kesalahan pada server saat menyimpan data',
+    });
+  }
+};
+
+export { createProfile, createWeightLog, getCaloriesSummary, getWeightLog };

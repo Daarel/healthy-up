@@ -104,6 +104,11 @@ const login = async (req, res) => {
         .json({ status: 'error', message: 'Invalid email and password' });
     }
 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { lastLoginAt: new Date() },
+    });
+
     const token = generateToken(user.id, res);
 
     res.status(200).json({
