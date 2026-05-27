@@ -36,6 +36,10 @@ const swaggerDocument = yaml.load(
   path.join(process.cwd(), 'docs', 'swagger.yaml'),
 );
 
+app.get('/', (req, res) => {
+  res.redirect('/api-docs');
+});
+
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 app.listen(PORT, () => {
