@@ -202,7 +202,8 @@ const createWeightLog = async (req, res) => {
 
     return res.status(201).json({
       status: 'success',
-      message: 'Berat badan berhasil dicatat dan profil kesehatan telah diperbarui!',
+      message:
+        'Berat badan berhasil dicatat dan profil kesehatan telah diperbarui!',
       data: {
         weightLog: newWeightLog,
         currentWeight: updatedHealthProfile.weight,

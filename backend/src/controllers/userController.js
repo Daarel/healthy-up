@@ -24,7 +24,7 @@ const getUserProfile = async (req, res) => {
         experiencePoints: true,
         rewardPoints: true,
         streakCount: true,
-        profilePictures: true
+        profilePictures: true,
       },
     });
 
