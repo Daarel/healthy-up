@@ -185,18 +185,27 @@ const createWeightLog = async (req, res) => {
     const validatedData = createWeightLogsSchema.parse(req.body);
     const userId = req.user.id;
 
-    const newWeightLog = await prisma.weightLog.create({
-      data: {
-        userId: userId,
-        weight: validatedData.weight,
-      },
-    });
+    const [newWeightLog, updatedHealthProfile] = await prisma.$transaction([
+      // Kueri 1: Buat riwayat log berat badan baru
+      prisma.weightLog.create({
+        data: {
+          userId: userId,
+          weight: validatedData.weight,
+        },
+      }),
+
+      prisma.healthProfile.update({
+        where: { userId: userId },
+        data: { weight: validatedData.weight },
+      }),
+    ]);
 
     return res.status(201).json({
       status: 'success',
-      message: 'Berat badan berhasil dicatat!',
+      message: 'Berat badan berhasil dicatat dan profil kesehatan telah diperbarui!',
       data: {
         weightLog: newWeightLog,
+        currentWeight: updatedHealthProfile.weight,
       },
     });
   } catch (err) {
@@ -207,6 +216,13 @@ const createWeightLog = async (req, res) => {
           field: e.path[0],
           message: e.message,
         })),
+      });
+    }
+
+    if (err.code === 'P2025') {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Profil kesehatan belum dibuat untuk pengguna ini.',
       });
     }
 
