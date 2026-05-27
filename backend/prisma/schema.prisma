@@ -40,6 +40,15 @@ enum Role {
   user
 }
 
+enum Title {
+  pemula // level 1 - 4
+  penggerak // Level 5 - 9
+  pejuang_sehat // Level 10 - 14
+  kesatria_bugar // Level 15 - 19
+  master_vitalitas // Level 20 - 24
+  legenda // Level 25+
+}
+
 // --- MODELS ---
 model User {
   id             String @id @default(uuid()) @db.Uuid
@@ -49,11 +58,11 @@ model User {
   role           Role   @default(user)
   profilePicture String @default("https://ui-avatars.com/api/?name=New+User&background=random&color=fff")
 
-  rankTitle        String @default("pemula") @db.VarChar(20)
-  level            Int    @default(1)
-  experiencePoints Int    @default(0)
-  rewardPoints     Int    @default(0)
-  streakCount      Int    @default(0)
+  rankTitle        Title @default(pemula)
+  level            Int   @default(1)
+  experiencePoints Int   @default(0)
+  rewardPoints     Int   @default(0)
+  streakCount      Int   @default(0)
 
   lastLoginAt DateTime? @db.Timestamptz
   createdAt   DateTime  @default(now()) @db.Timestamptz
