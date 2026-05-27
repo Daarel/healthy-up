@@ -1,6 +1,8 @@
 import { z } from 'zod';
 
-export const getAllUsersSchema = z.object({
+const getAllUsersSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
-  limit: z.coerce.number().int().positive().default(10),
+  limit: z.coerce.number().int().positive().default(20),
 });
+
+export { getAllUsersSchema };
