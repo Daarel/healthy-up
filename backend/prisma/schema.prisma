@@ -35,12 +35,19 @@ enum VerificationStatus {
   rejected
 }
 
+enum Role {
+  admin
+  user
+}
+
 // --- MODELS ---
 model User {
-  id       String @id @default(uuid()) @db.Uuid
-  username String @unique @db.VarChar(50)
-  email    String @unique @db.VarChar(255)
-  password String @db.Text
+  id             String @id @default(uuid()) @db.Uuid
+  username       String @unique @db.VarChar(50)
+  email          String @unique @db.VarChar(255)
+  password       String @db.Text
+  role           Role   @default(user)
+  profilePicture String @default("https://ui-avatars.com/api/?name=New+User&background=random&color=fff")
 
   rankTitle        String @default("pemula") @db.VarChar(20)
   level            Int    @default(1)
@@ -96,7 +103,6 @@ model Mission {
 
   xpReward       Int
   pointsReward   Int
-  aiNarrative    String? @db.Text
   proofImagePath String? @db.Text
 
   completedAt DateTime? @db.Timestamptz
