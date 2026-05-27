@@ -135,8 +135,15 @@ const getCaloriesSummary = async (req, res) => {
 };
 
 /**
- * * @desc    Add User Daily Weight Loss
+ * * @desc    Get User Daily Weight Loss
  * ! @route   GET /api/v1/health-profiles/getWeightLog
+ * ? @access  Public
+ */
+
+
+/**
+ * * @desc    Add User Daily Weight Loss
+ * ! @route   POST /api/v1/health-profiles/getWeightLog
  * ? @access  Public
  */
 
