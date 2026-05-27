@@ -1,0 +1,118 @@
+openapi: 3.0.0
+info:
+  title: HealthyUp API Documentation
+  description: Dokumentasi RESTful API untuk aplikasi HealthyUp (Capstone Project)
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: https://healthy-up-production.up.railway.app
+
+tags:
+  - name: Auth
+    description: Endpoint untuk autentikasi pengguna
+
+paths:
+  /auth/register:
+    post:
+      summary: Mendaftarkan akun baru
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                  example: Daarel Safa
+                email:
+                  type: string
+                  example: daarel@example.com
+                password:
+                  type: string
+                  example: PasswordKuat123!
+      responses:
+        '201':
+          description: Berhasil mendaftar
+        '400':
+          description: Validasi gagal atau email sudah terdaftar
+
+  /auth/login:
+    post:
+      summary: Login pengguna
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  example: daarel@example.com
+                password:
+                  type: string
+                  example: PasswordKuat123!
+      responses:
+        '200':
+          description: Berhasil login (mengembalikan token)
+        '401':
+          description: Kredensial tidak valid
+
+  /auth/logout:
+    post:
+      summary: Logout pengguna (menghapus cookie)
+      tags: [Auth]
+      responses:
+        '200':
+          description: Berhasil logout
+
+  /auth/forgot-password:
+    post:
+      summary: Meminta kode OTP untuk reset password
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  example: daarel@example.com
+      responses:
+        '200':
+          description: OTP berhasil dikirim ke email
+
+  /auth/reset-password:
+    post:
+      summary: Mereset password menggunakan kode OTP
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, otp, newPassword]
+              properties:
+                email:
+                  type: string
+                  example: daarel@example.com
+                otp:
+                  type: string
+                  example: '123456'
+                newPassword:
+                  type: string
+                  example: PasswordBaru321!
+      responses:
+        '200':
+          description: Password berhasil diubah
+        '400':
+          description: OTP salah atau kadaluwarsa
