@@ -5,8 +5,8 @@ import {
   createWeightLog,
   getCaloriesSummary,
   getWeightLog,
-} from '../controllers/healthProfileController';
-import { protect } from '../middleware/authMiddleware';
+} from '../controllers/healthProfileController.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
