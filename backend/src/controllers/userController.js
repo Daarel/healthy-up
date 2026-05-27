@@ -73,4 +73,4 @@ const deleteProfile = async (req, res) => {
   }
 };
 
-export { deleteProfile,getUserProfile };
+export { deleteProfile, getUserProfile };
