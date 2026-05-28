@@ -10,6 +10,8 @@ servers:
 tags:
   - name: Auth
     description: Endpoint untuk autentikasi pengguna
+  - name: Health Profiles
+    description: Endpoint untuk manajemen profil kesehatan dan log berat badan
 
 paths:
   /auth/register:
@@ -116,3 +118,86 @@ paths:
           description: Password berhasil diubah
         '400':
           description: OTP salah atau kadaluwarsa
+  
+  /health-profiles/:
+    post:
+      summary: Membuat profil kesehatan pengguna (Satu pengguna, satu profil)
+      tags: [Health Profiles]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [gender, age, heightCm, weightKg, goalWeight]
+              properties:
+                gender:
+                  type: string
+                  example: 'male'
+                age:
+                  type: integer
+                  example: 21
+                heightCm:
+                  type: number
+                  example: 175.5
+                weightKg:
+                  type: number
+                  example: 70.2
+                goalWeight:
+                  type: number
+                  example: 65.0
+      responses:
+        '201':
+          description: Profil kesehatan berhasil disimpan
+        '400':
+          description: Validasi gagal atau profil sudah ada
+
+  /health-profiles/calories-summary:
+    get:
+      summary: Mendapatkan ringkasan kalori terbakar hari ini dan minggu ini
+      tags: [Health Profiles]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Berhasil mengambil data ringkasan kalori
+        '500':
+          description: Gagal mengambil data dashboard
+
+  /health-profiles/weight-logs:
+    get:
+      summary: Mendapatkan riwayat log berat badan pengguna
+      tags: [Health Profiles]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Berhasil mengambil riwayat berat badan
+        '500':
+          description: Gagal mengambil data dari server
+
+    post:
+      summary: Mencatat log berat badan baru dan memperbarui profil kesehatan
+      tags: [Health Profiles]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [weight]
+              properties:
+                weight:
+                  type: number
+                  example: 68.5
+      responses:
+        '201':
+          description: Berat badan berhasil dicatat dan profil diperbarui
+        '400':
+          description: Validasi input gagal
+        '404':
+          description: Profil kesehatan belum dibuat
