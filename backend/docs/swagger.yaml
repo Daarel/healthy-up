@@ -118,7 +118,7 @@ paths:
           description: Password berhasil diubah
         '400':
           description: OTP salah atau kadaluwarsa
-
+  
   /health-profiles/:
     post:
       summary: Membuat profil kesehatan pengguna (Satu pengguna, satu profil)
