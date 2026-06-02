@@ -1,0 +1,1 @@
+Coding Camp 2026 capstone project gamifies wellness using AI. Users level up by completing personalized goals to earn rewards, turning healthy habits into an immersive RPG experience.
