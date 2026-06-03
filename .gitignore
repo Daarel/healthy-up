@@ -40,5 +40,3 @@ backend/generated/
 
 # ── Upload / media lokal ──────────────────────────────────────────────────────
 backend/uploads/
-
-frontend/
