@@ -139,6 +139,7 @@ model Reward {
   name          String   @db.VarChar(255)
   category      String   @db.VarChar(50)
   pointsCost    Int
+  imageUrl      String?
   stockQuantity Int      @default(0)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now()) @db.Timestamptz
