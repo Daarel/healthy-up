@@ -14,6 +14,14 @@ const upload = multer({
 router.post('/generate', protect, MissionController.generateMissions);
 router.get('/progress/weekly', protect, MissionController.getWeeklyProgress);
 
+// Admin-only: must be registered before /:id to prevent Express matching 'admin' as an id
+router.get(
+  '/admin/pending',
+  protect,
+  adminOnly,
+  MissionController.getPendingVerifications,
+);
+
 router.get('/:id', protect, MissionController.getMissionById);
 router.patch(
   '/:id/status',
@@ -30,12 +38,5 @@ router.patch(
 );
 
 router.get('/', protect, MissionController.getUserMissions);
-
-router.get(
-  '/admin/missions/pending',
-  protect,
-  adminOnly,
-  MissionController.getPendingVerifications,
-);
 
 export default router;

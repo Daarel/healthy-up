@@ -1,96 +1,48 @@
-import { useState } from "react";
-import { CheckCircle, XCircle, Loader2, ImageOff, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import {
+  CheckCircle, XCircle, Loader2, ImageOff,
+  ChevronLeft, ChevronRight, X, RefreshCw, AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { adminApi } from "@/lib/api";
 
-// Data dummy — nanti diganti dengan fetch ke API
-// proofMedia: array of { url: string, type: "image" | "video" }
-const DUMMY_MISSIONS = [
-  {
-    id: "m1",
-    userId: "1",
-    username: "ghifari123",
-    title: "Jalan kaki 30 menit",
-    description: "Lakukan jalan kaki selama minimal 30 menit di luar ruangan.",
-    difficultyScore: 2,
-    scheduledDate: "2026-05-24",
-    status: "completed",
-    verificationStatus: "pending",
-    proofMedia: [
-      { url: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800&h=600&fit=crop", type: "image" },
-      { url: "https://www.w3schools.com/html/mov_bbb.mp4", type: "video" },
-      { url: "https://images.unsplash.com/photo-1538805060514-97d9cc17730c?w=800&h=600&fit=crop", type: "image" },
-    ],
-    xpReward: 100,
-    pointsReward: 50,
-  },
-  {
-    id: "m2",
-    userId: "2",
-    username: "siti_sehat",
-    title: "Meditasi 15 menit",
-    description: "Lakukan meditasi atau pernapasan dalam selama 15 menit.",
-    difficultyScore: 1,
-    scheduledDate: "2026-05-24",
-    status: "completed",
-    verificationStatus: "pending",
-    proofMedia: [],
-    xpReward: 75,
-    pointsReward: 30,
-  },
-  {
-    id: "m3",
-    userId: "3",
-    username: "budi_fit",
-    title: "Makan sayur 3 porsi",
-    description: "Konsumsi sayuran minimal 3 porsi dalam sehari.",
-    difficultyScore: 1,
-    scheduledDate: "2026-05-23",
-    status: "completed",
-    verificationStatus: "pending",
-    proofMedia: [
-      { url: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800&h=600&fit=crop", type: "image" },
-    ],
-    xpReward: 60,
-    pointsReward: 25,
-  },
-  {
-    id: "m4",
-    userId: "1",
-    username: "ghifari123",
-    title: "Push-up 20 kali",
-    description: "Lakukan push-up sebanyak 20 repetisi.",
-    difficultyScore: 3,
-    scheduledDate: "2026-05-22",
-    status: "completed",
-    verificationStatus: "approved",
-    proofMedia: [
-      { url: "https://images.unsplash.com/photo-1598971639058-fab3c3109a00?w=800&h=600&fit=crop", type: "image" },
-      { url: "https://www.w3schools.com/html/movie.mp4", type: "video" },
-    ],
-    xpReward: 150,
-    pointsReward: 75,
-  },
-  {
-    id: "m5",
-    userId: "4",
-    username: "rina_wellness",
-    title: "Tidur 8 jam",
-    description: "Tidur selama minimal 8 jam malam ini.",
-    difficultyScore: 1,
-    scheduledDate: "2026-05-21",
-    status: "completed",
-    verificationStatus: "rejected",
-    rejectionReason: "Bukti tidak relevan dengan misi.",
-    proofMedia: [
-      { url: "https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?w=800&h=600&fit=crop", type: "image" },
-    ],
-    xpReward: 60,
-    pointsReward: 20,
-  },
-];
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-// Warna status — teks berwarna, capitalize, tanpa badge
+/**
+ * Konversi data misi dari backend ke shape yang dipakai UI.
+ * Backend mengembalikan { ...mission, user: { username, email }, proofImage: string|null }
+ */
+function mapMission(m) {
+  const proofMedia = [];
+  if (m.proofImagePath) {
+    // Deteksi video berdasarkan ekstensi
+    const isVideo = /\.(mp4|webm|ogg|mov)(\?|$)/i.test(m.proofImagePath);
+    proofMedia.push({ url: m.proofImagePath, type: isVideo ? "video" : "image" });
+  }
+  return {
+    id: m.id,
+    title: m.title,
+    description: m.description ?? "",
+    category: m.category ?? "",
+    difficultyScore: m.difficultyScore ?? 0,
+    scheduledDate: m.scheduledDate
+      ? new Date(m.scheduledDate).toLocaleDateString("id-ID")
+      : m.completedAt
+      ? new Date(m.completedAt).toLocaleDateString("id-ID")
+      : "-",
+    status: m.status,
+    verificationStatus: m.verificationStatus,
+    rejectionReason: m.rejectionReason ?? null,
+    xpReward: m.xpReward ?? 0,
+    pointsReward: m.pointsReward ?? 0,
+    username: m.user?.username ?? m.user?.email ?? "Unknown",
+    proofMedia,
+  };
+}
+
+// ── Konstanta tampilan ────────────────────────────────────────────────────────
+
 const STATUS_STYLE = {
   pending:  "text-yellow-600 font-semibold",
   approved: "text-green-600 font-semibold",
@@ -104,17 +56,15 @@ const STATUS_LABEL = {
 };
 
 const STATUS_TAB = Object.fromEntries(
-  Object.entries(STATUS_LABEL).map(([key, value]) => [
-    key,
-    value.charAt(0) + value.slice(1).toLowerCase()
-  ])
+  Object.entries(STATUS_LABEL).map(([k, v]) => [k, v.charAt(0) + v.slice(1).toLowerCase()])
 );
 
-// ── Komponen carousel media di dalam modal detail ──────────────────────────
+// ── Komponen MediaCarousel ────────────────────────────────────────────────────
+
 function MediaCarousel({ media }) {
   const [idx, setIdx] = useState(0);
 
-  if (media.length === 0) {
+  if (!media || media.length === 0) {
     return (
       <div className="w-full h-56 bg-gray-100 rounded-lg flex flex-col items-center justify-center gap-2 border border-gray-200">
         <ImageOff className="w-8 h-8 text-gray-300" />
@@ -128,24 +78,12 @@ function MediaCarousel({ media }) {
 
   return (
     <div className="space-y-2">
-      {/* Media utama */}
       <div className="relative w-full h-64 bg-gray-900 rounded-lg overflow-hidden border border-gray-200">
         {isVideo ? (
-          <video
-            key={current.url} // re-mount saat ganti video
-            src={current.url}
-            controls
-            className="w-full h-full object-contain"
-          />
+          <video key={current.url} src={current.url} controls className="w-full h-full object-contain" />
         ) : (
-          <img
-            src={current.url}
-            alt={`Bukti ${idx + 1}`}
-            className="w-full h-full object-cover"
-          />
+          <img src={current.url} alt={`Bukti ${idx + 1}`} className="w-full h-full object-cover" />
         )}
-
-        {/* Navigasi prev/next */}
         {media.length > 1 && (
           <>
             <button
@@ -167,7 +105,6 @@ function MediaCarousel({ media }) {
         )}
       </div>
 
-      {/* Thumbnail strip */}
       {media.length > 1 && (
         <div className="flex gap-2 overflow-x-auto pb-1">
           {media.map((item, i) => (
@@ -179,7 +116,6 @@ function MediaCarousel({ media }) {
               }`}
             >
               {item.type === "video" ? (
-                /* Thumbnail video — tampilkan ikon play di atas bg gelap */
                 <div className="w-full h-full flex items-center justify-center bg-gray-800">
                   <svg className="w-5 h-5 text-white opacity-80" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
@@ -196,19 +132,21 @@ function MediaCarousel({ media }) {
   );
 }
 
-// ── Modal detail misi ──────────────────────────────────────────────────────
+// ── Modal Detail Misi ─────────────────────────────────────────────────────────
+
 function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }) {
   const [rejectMode, setRejectMode] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
+  const isLoading = loadingId === mission.id;
 
   const handleRejectSubmit = () => {
-    onReject(mission.id, rejectReason);
+    onReject(mission.id, rejectReason || null);
   };
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
-        {/* Header modal */}
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h3 className="font-semibold text-gray-800">Detail Misi</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -217,7 +155,7 @@ function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }
         </div>
 
         <div className="px-5 py-4 space-y-4">
-          {/* Media bukti */}
+          {/* Media Bukti */}
           <div>
             <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
               Bukti Media ({mission.proofMedia.length} file)
@@ -225,7 +163,7 @@ function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }
             <MediaCarousel media={mission.proofMedia} />
           </div>
 
-          {/* Info misi */}
+          {/* Info Misi */}
           <div className="space-y-2">
             <div className="flex items-start justify-between gap-2">
               <h4 className="font-semibold text-gray-800">{mission.title}</h4>
@@ -237,7 +175,9 @@ function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }
               oleh <span className="font-medium text-gray-700">{mission.username}</span>
               {" · "}{mission.scheduledDate}
             </p>
-            <p className="text-sm text-gray-600">{mission.description}</p>
+            {mission.description && (
+              <p className="text-sm text-gray-600">{mission.description}</p>
+            )}
           </div>
 
           {/* Stats */}
@@ -280,7 +220,7 @@ function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }
             </div>
           )}
 
-          {/* Aksi — hanya jika pending */}
+          {/* Tombol aksi — hanya tampil jika masih pending */}
           {mission.verificationStatus === "pending" && (
             <div className="flex gap-2 pt-1">
               {rejectMode ? (
@@ -289,16 +229,17 @@ function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }
                     size="sm"
                     variant="destructive"
                     onClick={handleRejectSubmit}
-                    disabled={loadingId === mission.id}
+                    disabled={isLoading}
                     className="flex-1"
                   >
-                    {loadingId === mission.id ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
                     Konfirmasi Tolak
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => { setRejectMode(false); setRejectReason(""); }}
+                    disabled={isLoading}
                     className="flex-1"
                   >
                     Batal
@@ -309,10 +250,10 @@ function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }
                   <Button
                     size="sm"
                     onClick={() => onApprove(mission.id)}
-                    disabled={loadingId === mission.id}
+                    disabled={isLoading}
                     className="flex-1 bg-[#006e2f] hover:bg-[#005823] gap-1.5"
                   >
-                    {loadingId === mission.id ? (
+                    {isLoading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <CheckCircle className="w-4 h-4" />
@@ -323,7 +264,7 @@ function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }
                     size="sm"
                     variant="outline"
                     onClick={() => setRejectMode(true)}
-                    disabled={loadingId === mission.id}
+                    disabled={isLoading}
                     className="flex-1 text-red-600 border-red-200 hover:bg-red-50 gap-1.5"
                   >
                     <XCircle className="w-4 h-4" />
@@ -339,29 +280,52 @@ function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }
   );
 }
 
-// ── Halaman utama ──────────────────────────────────────────────────────────
+// ── Halaman Utama ─────────────────────────────────────────────────────────────
+
 export default function AdminMissions() {
-  const [missions, setMissions] = useState(DUMMY_MISSIONS);
-  const [filterStatus, setFilterStatus] = useState("pending");
-  const [loadingId, setLoadingId] = useState(null);
+  const [missions, setMissions]               = useState([]);
+  const [filterStatus, setFilterStatus]       = useState("pending");
+  const [loadingId, setLoadingId]             = useState(null);
   const [selectedMission, setSelectedMission] = useState(null);
+  const [fetching, setFetching]               = useState(true);
+  const [fetchError, setFetchError]           = useState(null);
 
-  const filtered = missions.filter(
-    (m) => filterStatus === "all" || m.verificationStatus === filterStatus
-  );
+  // ─── Fetch missions dari backend berdasarkan filter ─────────────────────
+  // setFetching(true) TIDAK ada di sini — dipanggil dari event handler agar
+  // tidak trigger "setState synchronously in effect" lint error
+  const fetchMissions = useCallback(async (status) => {
+    try {
+      const res = await adminApi.getPendingMissions(status);
+      const raw = res?.data?.missions ?? [];
+      setMissions(raw.map(mapMission));
+      setFetchError(null); // Pindah ke sini agar asinkronus (setelah await)
+    } catch (err) {
+      setFetchError(err.message || "Gagal mengambil data misi.");
+    } finally {
+      setFetching(false);
+    }
+  }, []);
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchMissions(filterStatus);
+  }, [fetchMissions, filterStatus]);
+
+  // ─── Handlers verifikasi ─────────────────────────────────────────────────
   const handleApprove = async (id) => {
     setLoadingId(id);
     try {
-      // TODO: ganti dengan API call
-      // await adminApi.approveMission(id);
-      await new Promise((r) => setTimeout(r, 600));
+      await adminApi.verifyMission(id, "approved");
       setMissions((prev) =>
         prev.map((m) => (m.id === id ? { ...m, verificationStatus: "approved" } : m))
       );
       setSelectedMission((prev) =>
         prev?.id === id ? { ...prev, verificationStatus: "approved" } : prev
       );
+      // Re-fetch agar konsisten dengan filter aktif
+      await fetchMissions(filterStatus);
+    } catch (err) {
+      alert(`Gagal menyetujui misi: ${err.message}`);
     } finally {
       setLoadingId(null);
     }
@@ -370,14 +334,10 @@ export default function AdminMissions() {
   const handleReject = async (id, reason) => {
     setLoadingId(id);
     try {
-      // TODO: ganti dengan API call
-      // await adminApi.rejectMission(id, reason);
-      await new Promise((r) => setTimeout(r, 600));
+      await adminApi.verifyMission(id, "rejected", reason);
       setMissions((prev) =>
         prev.map((m) =>
-          m.id === id
-            ? { ...m, verificationStatus: "rejected", rejectionReason: reason }
-            : m
+          m.id === id ? { ...m, verificationStatus: "rejected", rejectionReason: reason } : m
         )
       );
       setSelectedMission((prev) =>
@@ -385,26 +345,67 @@ export default function AdminMissions() {
           ? { ...prev, verificationStatus: "rejected", rejectionReason: reason }
           : prev
       );
+      // Re-fetch agar konsisten dengan filter aktif
+      await fetchMissions(filterStatus);
+    } catch (err) {
+      alert(`Gagal menolak misi: ${err.message}`);
     } finally {
       setLoadingId(null);
     }
   };
 
-  const pendingCount = missions.filter((m) => m.verificationStatus === "pending").length;
+  // ─── Derived state ────────────────────────────────────────────────────────
+  // missions sudah difilter dari backend; hitung pending count secara terpisah
+  const [pendingCount, setPendingCount] = useState(0);
 
+  // Ambil pending count sekali (dan setiap selesai approve/reject)
+  useEffect(() => {
+    adminApi.getPendingMissions('pending')
+      .then(res => setPendingCount(res?.data?.total ?? 0))
+      .catch(() => {});
+  }, [missions]);
+
+  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
-      <div>
-        <h1 className="text-xl font-semibold text-gray-800">Verifikasi Misi</h1>
-        <p className="text-sm text-gray-500 mt-0.5">{pendingCount} misi menunggu verifikasi</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-800">Verifikasi Misi</h1>
+          <p className="text-sm text-gray-500 mt-0.5">
+            {fetching ? "Memuat..." : `${pendingCount} misi menunggu verifikasi`}
+          </p>
+        </div>
+        <button
+          onClick={() => { setFetching(true); fetchMissions(filterStatus); }}
+          disabled={fetching}
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${fetching ? "animate-spin" : ""}`} />
+          Refresh
+        </button>
       </div>
 
-      {/* Filter status */}
+      {/* Error Banner */}
+      {fetchError && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+          <p className="text-sm text-red-700">{fetchError}</p>
+          <button
+            onClick={() => { setFetching(true); fetchMissions(filterStatus); }}
+            className="ml-auto text-sm text-red-600 hover:underline font-medium"
+          >
+            Coba lagi
+          </button>
+        </div>
+      )}
+
+      {/* Filter Status */}
       <div className="flex gap-1.5 flex-wrap">
         {["all", "pending", "approved", "rejected"].map((s) => (
           <button
             key={s}
-            onClick={() => setFilterStatus(s)}
+            onClick={() => { setFetching(true); setFilterStatus(s); }}
             className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
               filterStatus === s
                 ? "bg-[#006e2f] text-white border-[#006e2f]"
@@ -412,16 +413,45 @@ export default function AdminMissions() {
             }`}
           >
             {s === "all" ? "Semua" : STATUS_TAB[s]}
+            {s === "pending" && pendingCount > 0 && (
+              <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                filterStatus === "pending" ? "bg-white/30 text-white" : "bg-yellow-100 text-yellow-700"
+              }`}>
+                {pendingCount}
+              </span>
+            )}
           </button>
         ))}
       </div>
 
-      {/* Daftar misi */}
-      {filtered.length === 0 ? (
-        <p className="text-sm text-gray-400 py-8 text-center">Tidak ada misi ditemukan.</p>
-      ) : (
+      {/* Loading Skeleton */}
+      {fetching && (
         <div className="space-y-2">
-          {filtered.map((mission) => (
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-white rounded-xl border border-gray-100 p-4 animate-pulse">
+              <div className="flex gap-4">
+                <div className="w-16 h-16 bg-gray-200 rounded-lg flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-2/3" />
+                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                  <div className="h-3 bg-gray-100 rounded w-1/3" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Daftar Misi */}
+      {!fetching && missions.length === 0 && (
+        <p className="text-sm text-gray-400 py-8 text-center">
+          {fetchError ? "Gagal memuat data." : "Tidak ada misi ditemukan."}
+        </p>
+      )}
+
+      {!fetching && missions.length > 0 && (
+        <div className="space-y-2">
+          {missions.map((mission) => (
             <Card
               key={mission.id}
               className="cursor-pointer hover:shadow-md transition-shadow"
@@ -446,11 +476,6 @@ export default function AdminMissions() {
                             className="w-full h-full object-cover"
                           />
                         )}
-                        {mission.proofMedia.length > 1 && (
-                          <span className="absolute bottom-0.5 right-0.5 bg-black/60 text-white text-[10px] px-1 rounded">
-                            +{mission.proofMedia.length - 1}
-                          </span>
-                        )}
                       </>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -474,20 +499,30 @@ export default function AdminMissions() {
                       </span>
                     </div>
 
-                    <p className="text-xs text-gray-500 mt-1.5 line-clamp-1">{mission.description}</p>
+                    {mission.description && (
+                      <p className="text-xs text-gray-500 mt-1.5 line-clamp-1">{mission.description}</p>
+                    )}
 
                     <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
                       <span>+{mission.xpReward} XP</span>
                       <span>+{mission.pointsReward} Pts</span>
                       <span>Kesulitan: {mission.difficultyScore}/5</span>
                       {mission.proofMedia.length > 0 && (
-                        <span className="text-gray-400">
-                          {mission.proofMedia.filter(m => m.type === "image").length} foto
-                          {mission.proofMedia.filter(m => m.type === "video").length > 0 &&
-                            `, ${mission.proofMedia.filter(m => m.type === "video").length} video`}
+                        <span>
+                          {mission.proofMedia.filter((m) => m.type === "image").length > 0 &&
+                            `${mission.proofMedia.filter((m) => m.type === "image").length} foto`}
+                          {mission.proofMedia.filter((m) => m.type === "video").length > 0 &&
+                            `, ${mission.proofMedia.filter((m) => m.type === "video").length} video`}
                         </span>
                       )}
                     </div>
+
+                    {/* Alasan penolakan di card */}
+                    {mission.verificationStatus === "rejected" && mission.rejectionReason && (
+                      <p className="text-xs text-red-500 mt-1 line-clamp-1">
+                        Ditolak: {mission.rejectionReason}
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -496,7 +531,7 @@ export default function AdminMissions() {
         </div>
       )}
 
-      {/* Modal detail */}
+      {/* Modal Detail */}
       {selectedMission && (
         <MissionDetailModal
           mission={selectedMission}

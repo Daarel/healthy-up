@@ -69,7 +69,25 @@ export const adminApi = {
   getUsers: async ({ page = 1, limit = 20 } = {}) => {
     return request(`/users/all-users?page=${page}&limit=${limit}`);
   },
+  getUserById: async (id) => {
+    return request(`/users/${id}`);
+  },
   deleteUser: async (id) => {
     return request(`/users/${id}`, { method: "DELETE" });
+  },
+
+  getPendingMissions: async (verificationStatus = 'pending') => {
+    return request(`/missions/admin/pending?verificationStatus=${verificationStatus}`);
+  },
+  verifyMission: async (id, verificationStatus, rejectionReason = null) => {
+    const payload = { verificationStatus };
+    if (rejectionReason) {
+      payload.rejectionReason = rejectionReason;
+    }
+    
+    return request(`/missions/${id}/verify`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
   },
 };

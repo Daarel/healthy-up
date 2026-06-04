@@ -291,12 +291,20 @@ class MissionService {
     return missions;
   }
 
-  static async getPendingVerifications() {
-    const pendingMissions = await prisma.mission.findMany({
-      where: {
-        status: 'completed',
-        verificationStatus: 'pending',
-      },
+  static async getPendingVerifications(verificationStatus = 'pending') {
+    const VALID_STATUSES = ['pending', 'approved', 'rejected'];
+
+    const whereClause = {
+      status: 'completed',
+    };
+
+    // Filter by verificationStatus kecuali jika 'all'
+    if (verificationStatus !== 'all' && VALID_STATUSES.includes(verificationStatus)) {
+      whereClause.verificationStatus = verificationStatus;
+    }
+
+    const missions = await prisma.mission.findMany({
+      where: whereClause,
       include: {
         user: {
           select: {
@@ -310,7 +318,7 @@ class MissionService {
       },
     });
 
-    return pendingMissions;
+    return missions;
   }
 }
 

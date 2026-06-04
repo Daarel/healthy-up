@@ -102,9 +102,15 @@ export default function Dashboard() {
     catch { return false; }
   });
 
-  // Auto-buka modal setup untuk user baru
+  // Auto-buka modal setup untuk user baru (hanya 1 kali)
   const [showSetupModal, setShowSetupModal] = useState(() => {
-    try { return localStorage.getItem("healthyup:newUser") === "true"; }
+    try { 
+      const isNew = localStorage.getItem("healthyup:newUser") === "true"; 
+      if (isNew) {
+        localStorage.removeItem("healthyup:newUser");
+      }
+      return isNew;
+    }
     catch { return false; }
   });
 

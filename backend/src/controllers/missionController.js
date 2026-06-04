@@ -277,20 +277,22 @@ class MissionController {
   }
 
   /**
-   * * @desc    Get All Pending Missions for Review
-   * ! @route   GET /api/v1/admin/missions/pending
+   * * @desc    Get All Missions for Admin Review (filter by verificationStatus)
+   * ! @route   GET /api/v1/missions/admin/pending?verificationStatus=pending|approved|rejected|all
    * ? @access  Private (Admin Only)
    */
   static async getPendingVerifications(req, res) {
     try {
-      const pendingMissions = await MissionService.getPendingVerifications();
+      const { verificationStatus = 'pending' } = req.query;
+
+      const missions = await MissionService.getPendingVerifications(verificationStatus);
 
       return res.status(200).json({
         status: 'success',
-        message: 'Berhasil mengambil daftar antrean verifikasi',
+        message: 'Berhasil mengambil daftar misi',
         data: {
-          total: pendingMissions.length,
-          missions: pendingMissions,
+          total: missions.length,
+          missions,
         },
       });
     } catch (err) {
