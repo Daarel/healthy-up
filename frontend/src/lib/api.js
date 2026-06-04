@@ -135,3 +135,78 @@ export const userApi = {
     });
   },
 };
+
+export const healthProfileApi = {
+  // GET /api/v1/health-profiles — ambil profil kesehatan user
+  get: async () => {
+    return request("/health-profiles");
+  },
+  // POST /api/v1/health-profiles — simpan/buat profil kesehatan
+  create: async ({ gender, age, weightKg, heightCm, goalWeight }) => {
+    return request("/health-profiles", {
+      method: "POST",
+      body: JSON.stringify({ gender, age, weightKg, heightCm, goalWeight }),
+    });
+  },
+};
+
+export const missionApi = {
+  // GET /api/v1/missions — ambil semua misi user
+  getAll: async ({ date, status } = {}) => {
+    const params = new URLSearchParams();
+    if (date)   params.append("date", date);
+    if (status) params.append("status", status);
+    const query = params.toString() ? `?${params}` : "";
+    return request(`/missions${query}`);
+  },
+
+  // GET /api/v1/missions/:id — detail satu misi
+  getById: async (id) => {
+    return request(`/missions/${id}`);
+  },
+
+  // POST /api/v1/missions/generate — generate misi via AI
+  generate: async () => {
+    return request("/missions/generate", { method: "POST" });
+  },
+
+  // GET /api/v1/missions/progress/weekly — progress mingguan
+  getWeeklyProgress: async () => {
+    return request("/missions/progress/weekly");
+  },
+
+  // PATCH /api/v1/missions/:id/status — tandai selesai + upload bukti
+  // Tidak pakai request() karena FormData butuh Content-Type multipart (diset otomatis browser)
+  updateStatus: async (id, status, proofImageFile = null) => {
+    const token = getToken();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    const formData = new FormData();
+    formData.append("status", status);
+    if (proofImageFile) formData.append("proofImage", proofImageFile);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/missions/${id}/status`, {
+        method: "PATCH",
+        signal: controller.signal,
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          // Tidak set Content-Type — biarkan browser otomatis set multipart/form-data
+        },
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.message || "Gagal memperbarui status misi.");
+      }
+      return data;
+    } catch (err) {
+      if (err.name === "AbortError") throw new Error("Server terlalu lama merespons.");
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  },
+};
