@@ -63,7 +63,6 @@ export const authApi = {
     }
     return data;
   },
-
   register: async (username, email, password) => {
     const data = await request("/auth/register", {
       method: "POST",
