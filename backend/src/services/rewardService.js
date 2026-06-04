@@ -119,7 +119,6 @@ class RewardService {
   static async getUserRewards(userId, status) {
     const whereClause = { userId };
 
-    // Terapkan filter berdasarkan query status
     if (status === 'active') {
       whereClause.isUsed = false;
     } else if (status === 'used') {
@@ -133,6 +132,7 @@ class RewardService {
           select: {
             name: true,
             pointsCost: true,
+            imageUrl: true,
           },
         },
       },
