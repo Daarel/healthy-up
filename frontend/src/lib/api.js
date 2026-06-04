@@ -5,12 +5,15 @@ const TOKEN_KEY = "healthyup:token";
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
+
 function setToken(token) {
   localStorage.setItem(TOKEN_KEY, token);
 }
+
 function removeToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
+
 async function request(path, options = {}) {
   const token = getToken();
   const controller = new AbortController();
@@ -48,6 +51,7 @@ async function request(path, options = {}) {
     clearTimeout(timeoutId);
   }
 }
+
 export const authApi = {
   login: async (email, password) => {
     const data = await request("/auth/login", {
@@ -59,6 +63,7 @@ export const authApi = {
     }
     return data;
   },
+
   register: async (username, email, password) => {
     const data = await request("/auth/register", {
       method: "POST",
@@ -138,7 +143,6 @@ export const userApi = {
 
 export const healthApi = {
   createProfile: async (profileData) => {
-    const token = getToken();
     
     const response = await request("/health-profiles", {
       method: "POST",

@@ -33,7 +33,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import SetupTargetModal from '../components/SetupTargetModal';
-import { missionApi, healthProfileApi } from '../lib/api';
+import { missionApi, healthApi } from '../lib/api';
 
 // Map nama icon dari backend → Lucide component
 const ICON_MAP = {
@@ -90,6 +90,7 @@ export default function Tugas() {
 
   // --- State dari API ---
   const [tasks, setTasks] = useState([]); // flat array dari backend
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const hasFetched = useRef(false);
@@ -144,7 +145,7 @@ export default function Tugas() {
 
     try {
       // 1. Simpan health profile ke backend dulu
-      await healthProfileApi.create({
+      await healthApi.createProfile({
         gender,
         age,
         heightCm: height,
