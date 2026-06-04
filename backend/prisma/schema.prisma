@@ -69,6 +69,7 @@ model User {
   badges           Badge[] @default([])
   rewardPoints     Int     @default(0)
   streakCount      Int     @default(0)
+  lastStreakUpdateAt DateTime? @db.Timestamptz
 
   lastLoginAt DateTime? @db.Timestamptz
   createdAt   DateTime  @default(now()) @db.Timestamptz
@@ -79,7 +80,7 @@ model User {
   missions      Mission[]
   otpCode       OtpCode?
   weightLogs    WeightLog[]
-  calorieLogs   calorieLog[]
+  calorieLogs   CalorieLog[]
   userRewards   UserReward[]
 
   @@index([email])
@@ -139,6 +140,7 @@ model Reward {
   name          String   @db.VarChar(255)
   category      String   @db.VarChar(50)
   pointsCost    Int
+  imageUrl      String?
   stockQuantity Int      @default(0)
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now()) @db.Timestamptz
@@ -176,7 +178,7 @@ model WeightLog {
   @@index([userId])
 }
 
-model calorieLog {
+model CalorieLog {
   id       String   @id @default(uuid()) @db.Uuid
   userId   String   @db.Uuid
   calories Int
@@ -186,6 +188,7 @@ model calorieLog {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@map("calorieLogs")
 }
 
 model OtpCode {

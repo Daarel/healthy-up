@@ -24,6 +24,7 @@ class MissionService {
             gte: sevenDaysAgo,
           },
           status: 'completed',
+          verificationStatus: 'approved',
         },
       }),
     ]);
@@ -184,6 +185,7 @@ class MissionService {
   static async verifyMission(missionId, verificationStatus, rejectionReason) {
     const mission = await prisma.mission.findUnique({
       where: { id: missionId },
+      include: { user: true },
     });
 
     if (!mission) throw new Error('MISSION_NOT_FOUND');
@@ -198,13 +200,46 @@ class MissionService {
           data: { verificationStatus: 'approved' },
         });
 
+        if (mission.caloriesImpact > 0) {
+          await tx.calorieLog.create({
+            data: {
+              userId: mission.userId,
+              calories: mission.caloriesImpact,
+            },
+          });
+        }
+
+        // Streak Logic
+        const now = new Date();
+        const todayStr = now.toISOString().split('T')[0];
+        const lastUpdate = mission.user.lastStreakUpdateAt;
+        const lastUpdateStr = lastUpdate ? lastUpdate.toISOString().split('T')[0] : null;
+
+        let newStreakCount = mission.user.streakCount;
+        let newLastUpdateAt = lastUpdate;
+
+        if (lastUpdateStr !== todayStr) {
+          const yesterday = new Date(now);
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+          if (lastUpdateStr === yesterdayStr) {
+            newStreakCount += 1;
+          } else {
+            newStreakCount = 1; // reset or first time
+          }
+          newLastUpdateAt = now;
+        }
+
         const updatedUser = await tx.user.update({
           where: { id: mission.userId },
           data: {
             experiencePoints: { increment: mission.xpReward },
             rewardPoints: { increment: mission.pointsReward },
+            streakCount: newStreakCount,
+            lastStreakUpdateAt: newLastUpdateAt,
           },
-          select: { experiencePoints: true, rewardPoints: true, level: true },
+          select: { experiencePoints: true, rewardPoints: true, level: true, streakCount: true },
         });
 
         return { mission: approvedMission, userStats: updatedUser };
@@ -256,12 +291,20 @@ class MissionService {
     return missions;
   }
 
-  static async getPendingVerifications() {
-    const pendingMissions = await prisma.mission.findMany({
-      where: {
-        status: 'completed',
-        verificationStatus: 'pending',
-      },
+  static async getPendingVerifications(verificationStatus = 'pending') {
+    const VALID_STATUSES = ['pending', 'approved', 'rejected'];
+
+    const whereClause = {
+      status: 'completed',
+    };
+
+    // Filter by verificationStatus kecuali jika 'all'
+    if (verificationStatus !== 'all' && VALID_STATUSES.includes(verificationStatus)) {
+      whereClause.verificationStatus = verificationStatus;
+    }
+
+    const missions = await prisma.mission.findMany({
+      where: whereClause,
       include: {
         user: {
           select: {
@@ -275,7 +318,7 @@ class MissionService {
       },
     });
 
-    return pendingMissions;
+    return missions;
   }
 }
 

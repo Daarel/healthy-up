@@ -1,14 +1,20 @@
 import express from 'express';
+import multer from 'multer';
 
 import RewardController from '../controllers/rewardController.js';
 import { adminOnly, protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 3 * 1024 * 1024 },
+});
+
 router
   .route('/')
   .get(protect, RewardController.getRewards)
-  .post(protect, adminOnly, RewardController.createReward);
+  .post(protect, adminOnly, upload.single('image'), RewardController.createReward);
 
 router.route('/:id').delete(protect, adminOnly, RewardController.deleteReward);
 

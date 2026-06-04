@@ -5,12 +5,15 @@ const TOKEN_KEY = "healthyup:token";
 function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
+
 function setToken(token) {
   localStorage.setItem(TOKEN_KEY, token);
 }
+
 function removeToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
+
 async function request(path, options = {}) {
   const token = getToken();
   const controller = new AbortController();
@@ -48,6 +51,7 @@ async function request(path, options = {}) {
     clearTimeout(timeoutId);
   }
 }
+
 export const authApi = {
   login: async (email, password) => {
     const data = await request("/auth/login", {
@@ -133,5 +137,91 @@ export const userApi = {
       method: "PATCH",
       body: JSON.stringify({ profilePicture }),
     });
+  },
+};
+
+export const healthApi = {
+  createProfile: async (profileData) => {
+    
+    const response = await request("/health-profiles", {
+      method: "POST",
+      body: JSON.stringify(profileData),
+    });
+    return response;
+  },
+  getMyProfile: async () => {
+    return request("/health-profiles"); // unusend api
+  },
+  createWeightLog: async (weightData) => {
+    return request("/health-profiles/weight-logs", {
+      method: "POST",
+      body: JSON.stringify(weightData),
+    });
+  },
+  getWeightLogs: async (range = "month") => {
+    return request(`/health-profiles/weight-logs?range=${range}`);
+  },
+  getCalorieLogs: async () => {
+    return request("/health-profiles/calories-logs");
+  },
+};
+
+export const missionApi = {
+  // GET /api/v1/missions — ambil semua misi user
+  getAll: async ({ date, status } = {}) => {
+    const params = new URLSearchParams();
+    if (date)   params.append("date", date);
+    if (status) params.append("status", status);
+    const query = params.toString() ? `?${params}` : "";
+    return request(`/missions${query}`);
+  },
+
+  // GET /api/v1/missions/:id — detail satu misi
+  getById: async (id) => {
+    return request(`/missions/${id}`);
+  },
+
+  // POST /api/v1/missions/generate — generate misi via AI
+  generate: async () => {
+    return request("/missions/generate", { method: "POST" });
+  },
+
+  // GET /api/v1/missions/progress/weekly — progress mingguan
+  getWeeklyProgress: async () => {
+    return request("/missions/progress/weekly");
+  },
+
+  // PATCH /api/v1/missions/:id/status — tandai selesai + upload bukti
+  // Tidak pakai request() karena FormData butuh Content-Type multipart (diset otomatis browser)
+  updateStatus: async (id, status, proofImageFile = null) => {
+    const token = getToken();
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+    const formData = new FormData();
+    formData.append("status", status);
+    if (proofImageFile) formData.append("proofImage", proofImageFile);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/missions/${id}/status`, {
+        method: "PATCH",
+        signal: controller.signal,
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.message || "Gagal memperbarui status misi.");
+      }
+      return data;
+    } catch (err) {
+      if (err.name === "AbortError") throw new Error("Server terlalu lama merespons.");
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
   },
 };

@@ -22,10 +22,11 @@ class RewardService {
     const newReward = await prisma.reward.create({
       data: {
         name: rewardData.name,
-        category: rewardData.category, // Tambahan baru
+        category: rewardData.category,
         pointsCost: rewardData.pointsCost,
         stockQuantity: rewardData.stockQuantity,
         isActive: rewardData.isActive,
+        imageUrl: rewardData.imageUrl || null,
       },
     });
 
@@ -118,7 +119,6 @@ class RewardService {
   static async getUserRewards(userId, status) {
     const whereClause = { userId };
 
-    // Terapkan filter berdasarkan query status
     if (status === 'active') {
       whereClause.isUsed = false;
     } else if (status === 'used') {
@@ -132,6 +132,7 @@ class RewardService {
           select: {
             name: true,
             pointsCost: true,
+            imageUrl: true,
           },
         },
       },

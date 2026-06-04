@@ -575,60 +575,6 @@ paths:
           description: Sesi tidak valid atau tidak ada token
         '500':
           description: Gagal mengambil data dashboard summary
-
-    post:
-      summary: Mencatat asupan kalori (Kalori Masuk)
-      description: Menambahkan riwayat asupan kalori harian pengguna. Parameter nama makanan bersifat opsional.
-      tags: [Health Profiles]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [calories]
-              properties:
-                calories:
-                  type: integer
-                  minimum: 1
-                  example: 450
-      responses:
-        '201':
-          description: Asupan kalori berhasil dicatat
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  message:
-                    type: string
-                    example: Asupan kalori berhasil dicatat!
-                  data:
-                    type: object
-                    properties:
-                      calorieLog:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            format: uuid
-                          userId:
-                            type: string
-                            format: uuid
-                          calories:
-                            type: integer
-        '400':
-          description: Validasi input gagal (misal kalori bukan bilangan bulat positif)
-        '401':
-          description: Sesi tidak valid atau tidak ada token
-        '500':
-          description: Error creating calorie log
-
   /health-profiles/weight-logs:
     get:
       summary: Mendapatkan grafik riwayat berat badan pengguna
@@ -962,7 +908,7 @@ paths:
         '500':
           description: Terjadi kesalahan saat menghapus akun
 
-  /users/user/picture:
+  /profile/picture:
     patch:
       summary: Memperbarui foto profil pengguna
       description: Mengubah URL foto profil pengguna. URL harus berupa tautan gambar yang valid.
@@ -1842,93 +1788,3 @@ paths:
                         type: array
                         items:
                           $ref: '#/components/schemas/PendingMission'
-
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
-  schemas:
-    Mission:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        userId:
-          type: string
-          format: uuid
-        title:
-          type: string
-        description:
-          type: string
-        category:
-          type: string
-          enum: [physical, nutrition, mental]
-        status:
-          type: string
-          enum: [assigned, completed, failed]
-        verificationStatus:
-          type: string
-          enum: [pending, approved, rejected]
-        icon:
-          type: string
-        difficultyScore:
-          type: integer
-        caloriesImpact:
-          type: integer
-        proofImagePath:
-          type: string
-          format: uri
-          nullable: true
-        rejectionReason:
-          type: string
-          nullable: true
-        xpReward:
-          type: integer
-        pointsReward:
-          type: integer
-        createdAt:
-          type: string
-          format: date-time
-        completedAt:
-          type: string
-          format: date-time
-          nullable: true
-
-    PendingMission:
-      allOf:
-        - $ref: '#/components/schemas/Mission'
-        - type: object
-          properties:
-            user:
-              type: object
-              properties:
-                username:
-                  type: string
-                  example: john_doe
-                email:
-                  type: string
-                  example: john@example.com
-
-    ErrorResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          example: error
-        message: 
-          type: string
-          example: Pesan error deskriptif
-        errors:
-          type: array
-          description: Hanya muncul jika ada error validasi Zod
-          items:
-            type: object
-            properties:
-              field:
-                type: string
-              message:
-                type: string
