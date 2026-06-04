@@ -138,7 +138,6 @@ export default function Tugas() {
       console.error(err);
     }
 
-    setShowSetupModal(false);
     setSetupDone(true);
     setLoading(true);
     setError(null);
@@ -171,8 +170,10 @@ export default function Tugas() {
       // 3. Ambil misi yang baru dibuat
       const res = await missionApi.getAll();
       setTasks(res.data.missions);
+      return res.data.missions;
     } catch (err) {
       setError(err.message);
+      return [];
     } finally {
       setLoading(false);
     }

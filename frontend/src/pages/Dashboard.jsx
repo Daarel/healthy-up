@@ -1,17 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, Check, Star, Sparkle } from "lucide-react";
+import { MoreVertical, Check, Star, Sparkle, Brain, Dumbbell, UtensilsCrossed, Apple, Footprints, Moon, Droplets, Activity, Flame, Heart, Wind, Bike, Salad } from "lucide-react";
 import Navbar from "../components/Navbar";
 import WeightCard from "../components/WeightCard";
 import WeightReminderBanner from "../components/WeightReminderBanner";
 import WeightInputModal from "../components/WeightInputModal";
 import SetupTargetModal from "../components/SetupTargetModal";
 import Streak from "../components/ui/streak";
-import { healthApi } from "../lib/api";
+import { healthApi, missionApi } from "../lib/api";
 
 const WEIGHT_STORAGE_KEY = "healthyup:weightLog";
 const SETUP_DONE_KEY     = "healthyup:setupDone";
 const STATS_STORAGE_KEY  = "healthyup:stats";
+
+// Map nama icon dari backend → Lucide component (sama seperti Tugas.jsx)
+const ICON_MAP = {
+  brain: Brain,
+  "biceps-flexed": Dumbbell,
+  dumbbell: Dumbbell,
+  utensils: UtensilsCrossed,
+  apple: Apple,
+  footprints: Footprints,
+  moon: Moon,
+  droplets: Droplets,
+  activity: Activity,
+  flame: Flame,
+  heart: Heart,
+  wind: Wind,
+  bike: Bike,
+  salad: Salad,
+};
+
+const CATEGORY_ICON_COLOR = {
+  physical: "text-orange-500",
+  mental: "text-purple-500",
+  nutrition: "text-green-600",
+};
+
+function getTaskIcon(iconName, category) {
+  return ICON_MAP[iconName?.toLowerCase()] ?? ICON_MAP[category] ?? Activity;
+}
 
 const getTodayKey = () => {
   const now = new Date();
@@ -92,6 +120,34 @@ export default function Dashboard() {
   // ─── Tasks state (siap diganti API GET /api/missions) ─────────────────────
   // TODO: ganti dengan fetch ke GET /api/missions?status=assigned saat backend siap
   const [tasks, setTasks] = useState([]);
+  const [loadingTasks, setLoadingTasks] = useState(setupDone);
+
+  useEffect(() => {
+    if (setupDone) {
+      missionApi.getAll()
+        .then(res => {
+          const missions = res.data?.missions || [];
+          if (missions.length > 0) {
+            const top5 = missions.slice(0, 5);
+            setTasks(top5.map((t) => ({
+              id: t.id, 
+              title: t.title, 
+              category: t.category,
+              icon: t.icon,
+              completed: t.status === 'completed', 
+              claimed: false, 
+              points: t.pointsReward || t.points || 0, 
+            })));
+          }
+        })
+        .catch(err => {
+          console.error("Gagal load missions", err);
+        })
+        .finally(() => {
+          setLoadingTasks(false);
+        });
+    }
+  }, [setupDone]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const openWeightModal = () => { if (!isLoggedThisWeek) setShowWeightModal(true); };
@@ -106,7 +162,7 @@ export default function Dashboard() {
         currentWeight: newWeight, previousWeight: newPrev,
         lastLoggedDate: thisWeekKey, targetWeight,
       }));
-    } catch {}
+    } catch (err) { console.error(err) }
     setShowWeightModal(false);
   };
 
@@ -122,9 +178,15 @@ export default function Dashboard() {
     };
 
     try {
-      const result = await healthApi.createProfile(profilePayload);
+      await healthApi.createProfile(profilePayload);
     } catch (err) {
       console.dir(err); 
+    }
+
+    try {
+      await missionApi.generate();
+    } catch (err) {
+      console.dir(err);
     }
 
     if (newWeight !== currentWeight) {
@@ -132,19 +194,56 @@ export default function Dashboard() {
       setCurrentWeight(newWeight);
     }
     setTargetWeight(newTarget);
-    setTasks(newTasks.map((t) => ({
-      id: t.id, title: t.title, category: t.category,
-      completed: false, claimed: false, points: t.points, Icon: t.Icon,
-    })));
+    
     try {
-      window.localStorage.setItem(WEIGHT_STORAGE_KEY, JSON.stringify({
-        currentWeight: newWeight, previousWeight: currentWeight,
-        lastLoggedDate, targetWeight: newTarget,
+      const res = await missionApi.getAll();
+      const generatedTasks = res.data?.missions || [];
+      // Gunakan task dari backend jika ada
+      if (generatedTasks.length > 0) {
+        const mappedTasks = generatedTasks.map((t) => ({
+          id: t.id, title: t.title, category: t.category,
+          icon: t.icon,
+          completed: t.status === 'completed', claimed: false, points: t.pointsReward || t.points || 0,
+        }));
+        setTasks(mappedTasks);
+        
+        try {
+          window.localStorage.setItem(WEIGHT_STORAGE_KEY, JSON.stringify({
+            currentWeight: newWeight, previousWeight: currentWeight,
+            lastLoggedDate, targetWeight: newTarget,
+          }));
+          window.localStorage.setItem(SETUP_DONE_KEY, "true");
+          window.localStorage.removeItem("healthyup:newUser");
+        } catch (err){
+          console.error(err);
+        }
+        setSetupDone(true);
+        return mappedTasks; // <-- RETURN TASKS HERE
+      } else {
+        throw new Error("No tasks generated");
+      }
+    } catch {
+      // Fallback ke dummy AI_DAILY_TASKS
+      const fallbackTasks = newTasks.map((t) => ({
+        id: t.id, title: t.title, category: t.category,
+        icon: t.icon,
+        completed: false, claimed: false, points: t.points,
       }));
-      window.localStorage.setItem(SETUP_DONE_KEY, "true");
-      window.localStorage.removeItem("healthyup:newUser");
-    } catch {}
-    setSetupDone(true);
+      setTasks(fallbackTasks);
+
+      try {
+        window.localStorage.setItem(WEIGHT_STORAGE_KEY, JSON.stringify({
+          currentWeight: newWeight, previousWeight: currentWeight,
+          lastLoggedDate, targetWeight: newTarget,
+        }));
+        window.localStorage.setItem(SETUP_DONE_KEY, "true");
+        window.localStorage.removeItem("healthyup:newUser");
+      } catch (err){
+        console.error(err);
+      }
+      setSetupDone(true);
+      return fallbackTasks; // <-- RETURN FALLBACK HERE
+    }
   };
 
   const toggleTask = (id) =>
@@ -154,9 +253,29 @@ export default function Dashboard() {
     setTasks((prev) => prev.map((t) => t.id === id ? { ...t, claimed: true } : t));
 
   const totalEarned    = tasks.filter((t) => t.claimed).reduce((sum, t) => sum + t.points, 0);
-  const totalTasks     = tasks.length;
-  const completedTasks = tasks.filter((t) => t.completed || t.claimed).length;
-  const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  // ─── Weekly progress dari API (berdasarkan verificationStatus = approved) ──
+  const [weeklyProgress, setWeeklyProgress] = useState({ approved: 0, total: 0 });
+
+  useEffect(() => {
+    if (setupDone) {
+      missionApi.getWeeklyProgress()
+        .then(res => {
+          const data = res.data;
+          if (data) {
+            setWeeklyProgress({
+              approved: data.completedMissions ?? data.approved ?? 0,
+              total:    data.totalMissions    ?? data.total    ?? 0,
+            });
+          }
+        })
+        .catch(err => console.error("Gagal load weekly progress", err));
+    }
+  }, [setupDone]);
+
+  const progressPercent = weeklyProgress.total > 0
+    ? Math.round((weeklyProgress.approved / weeklyProgress.total) * 100)
+    : 0;
   const circumference   = 2 * Math.PI * 56; // r=56
 
   return (
@@ -217,10 +336,11 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* Progress Circle Card */}
             <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-1">
                 <h3 className="font-semibold text-[#191c20] font-lexend">Progress Minggu Ini</h3>
                 <MoreVertical className="w-5 h-5 text-[#6d7b6c]" />
               </div>
+              <p className="text-xs text-[#6d7b6c] font-jakarta mb-4">Misi yang telah diverifikasi</p>
               <div className="flex items-center justify-center">
                 <div className="relative w-32 h-32">
                   <svg className="w-full h-full transform -rotate-90">
@@ -232,7 +352,9 @@ export default function Dashboard() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-3xl font-bold text-[#191c20] font-lexend">{progressPercent}%</span>
-                    <span className="text-xs text-[#6d7b6c] font-jakarta">selesai</span>
+                    <span className="text-xs text-[#6d7b6c] font-jakarta">
+                      {weeklyProgress.approved}/{weeklyProgress.total} misi
+                    </span>
                   </div>
                 </div>
               </div>
@@ -300,6 +422,16 @@ export default function Dashboard() {
             <p className="text-xs text-[#6d7b6c] font-jakarta mb-6">Selesaikan tugas minggu ini dan klaim poinmu</p>
 
             {setupDone ? (
+              loadingTasks ? (
+                <div className="flex flex-col items-center justify-center py-10">
+                  <div className="w-8 h-8 border-4 border-[#006e2f] border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-sm text-[#6d7b6c] mt-4 font-jakarta">Memuat tugas...</p>
+                </div>
+              ) : tasks.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-[#6d7b6c] font-jakarta text-sm">Tidak ada tugas yang tersedia.</p>
+                </div>
+              ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {tasks.map((task) => (
                   <div
@@ -324,7 +456,11 @@ export default function Dashboard() {
                       {task.completed || task.claimed ? (
                         <Check className="w-5 h-5" />
                       ) : (
-                        <task.Icon className="w-5 h-5" />
+                        (() => {
+                          const IconComp = getTaskIcon(task.icon, task.category);
+                          const colorClass = CATEGORY_ICON_COLOR[task.category] ?? "text-[#006e2f]";
+                          return <IconComp className={`w-5 h-5 ${colorClass}`} />;
+                        })()
                       )}
                     </button>
                     <div className="flex-1 min-w-0">
@@ -354,6 +490,7 @@ export default function Dashboard() {
                   </div>
                 ))}
               </div>
+              )
             ) : (
               <div className="flex flex-col items-center justify-center py-8 text-center">
                 <p className="text-[#6d7b6c] font-jakarta text-sm">

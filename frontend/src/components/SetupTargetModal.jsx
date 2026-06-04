@@ -59,6 +59,7 @@ export default function SetupTargetModal({
 }) {
   // ── Step state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState("personal");
+  const [realTasks, setRealTasks] = useState(AI_DAILY_TASKS);
 
   // ── Step 1: personal ────────────────────────────────────────────────────
   const [gender, setGender] = useState("");
@@ -74,22 +75,26 @@ export default function SetupTargetModal({
   // ── Step 4: generating ──────────────────────────────────────────────────
   const [typingIndex, setTypingIndex] = useState(0);
 
-  // Reset setiap kali modal dibuka
-  useEffect(() => {
+  // Reset setiap kali modal dibuka (menggunakan render-phase update sesuai anjuran React)
+  const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
+  if (isOpen !== prevIsOpen) {
+    setPrevIsOpen(isOpen);
     if (isOpen) {
       setStep("personal");
       setWeight(initialWeight || 70);
       setTargetWeight(initialTarget || Math.max(30, (initialWeight || 70) - 5));
       setTypingIndex(0);
     }
-  }, [isOpen, initialWeight, initialTarget]);
+  }
 
-  // Saat weight berubah di step personal, sesuaikan target
-  useEffect(() => {
+  // Saat weight berubah di step personal, sesuaikan target (render-phase update)
+  const [prevWeight, setPrevWeight] = useState(weight);
+  if (weight !== prevWeight) {
+    setPrevWeight(weight);
     if (weight > 30) {
       setTargetWeight((prev) => Math.min(prev, weight - 0.5));
     }
-  }, [weight]);
+  }
 
   // Animasi AI typing
   useEffect(() => {
@@ -110,10 +115,18 @@ export default function SetupTargetModal({
   const isLose     = targetWeight < weight;
   const isGain     = targetWeight > weight;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    setTypingIndex(0);
+    setStep("generating");
     const confirmData = { gender, age, height, currentWeight: weight, targetWeight, tasks: AI_DAILY_TASKS };
-    onConfirm(confirmData);
-    // onClose();
+    try {
+      const generatedTasks = await onConfirm(confirmData);
+      if (generatedTasks && generatedTasks.length > 0) {
+        setRealTasks(generatedTasks);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // ── KALKULASI BMI MANUAL ────────────────────────────────────────────────
@@ -410,7 +423,7 @@ export default function SetupTargetModal({
                   <ArrowLeft className="w-4 h-4" />
                 </button>
                 <button type="button"
-                  onClick={() => { handleConfirm(); setTypingIndex(0); setStep("generating"); }}
+                  onClick={handleConfirm}
                   className="flex-1 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005425] transition-colors flex items-center justify-center gap-2">
                   <Sparkle className="w-4 h-4" />
                   Generate Tugas dengan AI
@@ -479,21 +492,25 @@ export default function SetupTargetModal({
                 Tugas Minggu Ini
               </p>
               <div className="bg-[#f8f9ff] rounded-2xl border border-[#e5eeff] overflow-hidden">
-                {AI_DAILY_TASKS.map((task, i) => (
+                {realTasks.map((task, i) => {
+                  const Icon = task.Icon || Sparkle;
+                  const iconColor = task.iconColor || "text-[#006e2f]";
+                  return (
                   <div key={task.id} className={`flex items-center gap-3 px-4 py-3 ${
-                    i < AI_DAILY_TASKS.length - 1 ? "border-b border-[#e5eeff]" : ""
+                    i < realTasks.length - 1 ? "border-b border-[#e5eeff]" : ""
                   }`}>
-                    <task.Icon className={`w-4 h-4 flex-shrink-0 ${task.iconColor}`} />
+                    <Icon className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-[#191c20] font-jakarta truncate">{task.title}</p>
                       <p className="text-xs text-[#6d7b6c] font-jakarta">{task.category}</p>
                     </div>
                     <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full flex-shrink-0">
                       <Star className="w-3 h-3 text-yellow-500" />
-                      <span className="text-xs font-semibold text-yellow-700 font-lexend">+{task.points}</span>
+                      <span className="text-xs font-semibold text-yellow-700 font-lexend">+{task.pointsReward || task.points || 0}</span>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

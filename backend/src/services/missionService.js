@@ -24,6 +24,7 @@ class MissionService {
             gte: sevenDaysAgo,
           },
           status: 'completed',
+          verificationStatus: 'approved',
         },
       }),
     ]);
@@ -197,6 +198,15 @@ class MissionService {
           where: { id: missionId },
           data: { verificationStatus: 'approved' },
         });
+
+        if (mission.caloriesImpact > 0) {
+          await tx.calorieLog.create({
+            data: {
+              userId: mission.userId,
+              calories: mission.caloriesImpact,
+            },
+          });
+        }
 
         const updatedUser = await tx.user.update({
           where: { id: mission.userId },
