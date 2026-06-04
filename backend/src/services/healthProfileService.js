@@ -29,48 +29,92 @@ class HealthProfileService {
   }
 
   static async getCalorieLog(userId) {
-    const now = new Date();
-    const startOfToday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    );
+    // const now = new Date();
+    // const startOfToday = new Date(
+    //   now.getFullYear(),
+    //   now.getMonth(),
+    //   now.getDate(),
+    // );
 
-    const startOfWeek = new Date(startOfToday);
-    startOfWeek.setDate(startOfWeek.getDate() - 7);
+    // const startOfWeek = new Date(startOfToday);
+    // startOfWeek.setDate(startOfWeek.getDate() - 7);
 
-    const [weeklyLog, weeklyPhysicalMissions] = await Promise.all([
-      prisma.calorieLog.aggregate({
-        _sum: { calories: true },
-        where: {
-          userId,
-          loggedAt: { gte: startOfWeek },
-        },
-      }),
+    // const [weeklyLog, weeklyPhysicalMissions] = await Promise.all([
+    //   prisma.calorieLog.aggregate({
+    //     _sum: { calories: true },
+    //     where: {
+    //       userId,
+    //       loggedAt: { gte: startOfWeek },
+    //     },
+    //   }),
 
-      prisma.mission.aggregate({
-        _sum: { caloriesImpact: true },
-        where: {
-          userId,
-          category: 'physical',
-          status: 'completed',
-          completedAt: { gte: startOfWeek },
-        },
-      }),
-    ]);
+    //   prisma.mission.aggregate({
+    //     _sum: { caloriesImpact: true },
+    //     where: {
+    //       userId,
+    //       category: 'physical',
+    //       status: 'completed',
+    //       completedAt: { gte: startOfWeek },
+    //     },
+    //   }),
+    // ]);
 
-    const burnedFromLog = weeklyLog._sum.calories || 0;
+    // const burnedFromLog = weeklyLog._sum.calories || 0;
 
-    const burnedFromMissions = Math.abs(
-      weeklyPhysicalMissions._sum.caloriesImpact || 0,
-    );
+    // const burnedFromMissions = Math.abs(
+    //   weeklyPhysicalMissions._sum.caloriesImpact || 0,
+    // );
+
+    // return {
+    //   status: 'success',
+    //   data: {
+    //     weeklyBurnedFromLog: burnedFromLog,
+    //     weeklyBurnedFromMissions: burnedFromMissions,
+    //   },
+    // };
+    const endDate = new Date();
+    const startDate = new Date();
+    
+    startDate.setDate(endDate.getDate() - 6);
+    
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+  
+    const rawLogs = await prisma.calorieLog.findMany({
+      where: {
+        userId: userId,
+        loggedAt: { gte: startDate, lte: endDate },
+      },
+    });
+  
+    const logMap = {};
+    rawLogs.forEach((log) => {
+      const dateString = log.loggedAt.toISOString().split('T')[0];
+    
+      logMap[dateString] = (logMap[dateString] || 0) + log.calories;
+    });
+
+    const filledLogs = [];
+    let currentDate = new Date(startDate);
+    let weeklyTotal = 0;
+
+    while (currentDate <= endDate) {
+      const dateString = currentDate.toISOString().split('T')[0];
+      const dailyCalories = logMap[dateString] || 0;
+
+      filledLogs.push({
+        date: dateString,
+        calories: dailyCalories,
+      });
+      
+      weeklyTotal += dailyCalories;
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
 
     return {
-      status: 'success',
-      data: {
-        weeklyBurnedFromLog: burnedFromLog,
-        weeklyBurnedFromMissions: burnedFromMissions,
-      },
+      weeklyBurnedFromLog: weeklyTotal,
+      dailyLogs: filledLogs,
     };
   }
 
@@ -94,6 +138,8 @@ class HealthProfileService {
     } else if (range === 'month') {
       startDate.setDate(endDate.getDate() - 29);
     }
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
 
     const rawLogs = await prisma.weightLog.findMany({
       where: {

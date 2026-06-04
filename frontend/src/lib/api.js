@@ -136,17 +136,30 @@ export const userApi = {
   },
 };
 
-export const healthProfileApi = {
-  // GET /api/v1/health-profiles — ambil profil kesehatan user
-  get: async () => {
+export const healthApi = {
+  createProfile: async (profileData) => {
+    const token = getToken();
+    
+    const response = await request("/health-profiles", {
+      method: "POST",
+      body: JSON.stringify(profileData),
+    });
+    return response;
+  },
+  getMyProfile: async () => {
     return request("/health-profiles");
   },
-  // POST /api/v1/health-profiles — simpan/buat profil kesehatan
-  create: async ({ gender, age, weightKg, heightCm, goalWeight }) => {
-    return request("/health-profiles", {
+  createWeightLog: async (weightData) => {
+    return request("/health-profiles/weight-logs", {
       method: "POST",
-      body: JSON.stringify({ gender, age, weightKg, heightCm, goalWeight }),
+      body: JSON.stringify(weightData),
     });
+  },
+  getWeightLogs: async (range = "month") => {
+    return request(`/health-profiles/weight-logs?range=${range}`);
+  },
+  getCalorieLogs: async () => {
+    return request("/health-profiles/calories-logs");
   },
 };
 

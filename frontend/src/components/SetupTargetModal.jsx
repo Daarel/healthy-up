@@ -111,9 +111,38 @@ export default function SetupTargetModal({
   const isGain     = targetWeight > weight;
 
   const handleConfirm = () => {
-    onConfirm({ gender, age, height, currentWeight: weight, targetWeight, tasks: AI_DAILY_TASKS });
-    onClose();
+    const confirmData = { gender, age, height, currentWeight: weight, targetWeight, tasks: AI_DAILY_TASKS };
+    onConfirm(confirmData);
+    // onClose();
   };
+
+  // ── KALKULASI BMI MANUAL ────────────────────────────────────────────────
+  // Rumus BMI: Berat (kg) / (Tinggi (m) * Tinggi (m))
+  const heightInMeters = height / 100;
+  const calculatedBmi = heightInMeters > 0 ? (weight / (heightInMeters * heightInMeters)).toFixed(2) : 0;
+  
+  let bmiCategory = "";
+  let bmiColorClass = "";
+  let gaugePosition = 0;
+
+  const numBmi = parseFloat(calculatedBmi);
+  if (numBmi < 18.5) {
+    bmiCategory = "Kurus (Underweight)";
+    bmiColorClass = "text-blue-500";
+    gaugePosition = Math.min(18, Math.max(0, ((numBmi - 10) / 8.5) * 18));
+  } else if (numBmi >= 18.5 && numBmi < 25) {
+    bmiCategory = "Normal";
+    bmiColorClass = "text-green-500";
+    gaugePosition = 18 + ((numBmi - 18.5) / 6.5) * 25;
+  } else if (numBmi >= 25 && numBmi < 30) {
+    bmiCategory = "Berat Berlebih (Overweight)";
+    bmiColorClass = "text-yellow-500";
+    gaugePosition = 43 + ((numBmi - 25) / 5) * 17;
+  } else {
+    bmiCategory = "Obesitas";
+    bmiColorClass = "text-red-500";
+    gaugePosition = 60 + Math.min(40, ((numBmi - 30) / 15) * 40);
+  }
 
   // ── Progress dots ────────────────────────────────────────────────────────
   const STEPS = ["personal", "bmi", "target", "generating", "preview"];
@@ -258,10 +287,14 @@ export default function SetupTargetModal({
               {/* BMI placeholder */}
               <div className="bg-[#f8f9ff] rounded-2xl p-5 border border-[#e5eeff]">
                 <p className="text-xs text-[#6d7b6c] font-jakarta text-center mb-3">BMI Score</p>
-                {/* TODO: ganti dengan nilai dari POST /api/auth/register response */}
-                <div className="flex flex-col items-center gap-2 mb-4">
-                  <div className="w-24 h-10 bg-[#e5eeff] rounded-xl animate-pulse" />
-                  <div className="w-28 h-5 bg-[#e5eeff] rounded-full animate-pulse" />
+                {/* BMI Hasil Kalkulasi */}
+                <div className="flex flex-col items-center mb-6">
+                  <span className={`text-4xl font-bold font-lexend ${bmiColorClass}`}>
+                    {calculatedBmi}
+                  </span>
+                  <span className={`text-sm font-semibold font-jakarta mt-1 ${bmiColorClass}`}>
+                    {bmiCategory}
+                  </span>
                 </div>
 
                 {/* Gauge */}
@@ -270,6 +303,11 @@ export default function SetupTargetModal({
                   <div className="absolute left-[18%] top-0 h-full w-[25%] bg-green-500" />
                   <div className="absolute left-[43%] top-0 h-full w-[17%] bg-yellow-400" />
                   <div className="absolute left-[60%] top-0 h-full w-[40%] bg-red-500 rounded-r-full" />
+                  {/* Dot */}
+                  <div 
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-[3px rounded-full shadow-md transition-all duration-700 ease-out z-10"
+                    style={{ left: `calc(${gaugePosition}% - 8px)` }} 
+                  />
                 </div>
                 <div className="flex justify-between text-[10px] text-[#6d7b6c] font-jakarta">
                   <span>Kurus</span>
@@ -372,7 +410,7 @@ export default function SetupTargetModal({
                   <ArrowLeft className="w-4 h-4" />
                 </button>
                 <button type="button"
-                  onClick={() => { setTypingIndex(0); setStep("generating"); }}
+                  onClick={() => { handleConfirm(); setTypingIndex(0); setStep("generating"); }}
                   className="flex-1 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005425] transition-colors flex items-center justify-center gap-2">
                   <Sparkle className="w-4 h-4" />
                   Generate Tugas dengan AI
@@ -468,7 +506,7 @@ export default function SetupTargetModal({
                 className="flex-1 py-3 border-2 border-[#c1c9bf] text-[#6d7b6c] rounded-xl font-semibold font-jakarta hover:bg-[#f8f9ff] transition-colors">
                 Ubah Target
               </button>
-              <button type="button" onClick={handleConfirm}
+              <button type="button" onClick={onClose}
                 className="flex-1 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-jakarta hover:bg-[#005425] transition-colors flex items-center justify-center gap-2">
                 Mulai Sekarang
                 <ArrowRight className="w-4 h-4" />
