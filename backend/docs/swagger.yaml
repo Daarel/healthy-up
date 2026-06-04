@@ -575,60 +575,6 @@ paths:
           description: Sesi tidak valid atau tidak ada token
         '500':
           description: Gagal mengambil data dashboard summary
-
-    post:
-      summary: Mencatat asupan kalori (Kalori Masuk)
-      description: Menambahkan riwayat asupan kalori harian pengguna. Parameter nama makanan bersifat opsional.
-      tags: [Health Profiles]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [calories]
-              properties:
-                calories:
-                  type: integer
-                  minimum: 1
-                  example: 450
-      responses:
-        '201':
-          description: Asupan kalori berhasil dicatat
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: success
-                  message:
-                    type: string
-                    example: Asupan kalori berhasil dicatat!
-                  data:
-                    type: object
-                    properties:
-                      calorieLog:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            format: uuid
-                          userId:
-                            type: string
-                            format: uuid
-                          calories:
-                            type: integer
-        '400':
-          description: Validasi input gagal (misal kalori bukan bilangan bulat positif)
-        '401':
-          description: Sesi tidak valid atau tidak ada token
-        '500':
-          description: Error creating calorie log
-
   /health-profiles/weight-logs:
     get:
       summary: Mendapatkan grafik riwayat berat badan pengguna
