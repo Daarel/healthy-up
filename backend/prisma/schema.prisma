@@ -69,6 +69,7 @@ model User {
   badges           Badge[] @default([])
   rewardPoints     Int     @default(0)
   streakCount      Int     @default(0)
+  lastStreakUpdateAt DateTime? @db.Timestamptz
 
   lastLoginAt DateTime? @db.Timestamptz
   createdAt   DateTime  @default(now()) @db.Timestamptz
