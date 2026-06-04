@@ -150,7 +150,7 @@ export const healthApi = {
     return response;
   },
   getMyProfile: async () => {
-    return request("/health-profiles");
+    return request("/health-profiles"); // unusend api
   },
   createWeightLog: async (weightData) => {
     return request("/health-profiles/weight-logs", {
