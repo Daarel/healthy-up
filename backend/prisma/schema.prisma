@@ -79,7 +79,7 @@ model User {
   missions      Mission[]
   otpCode       OtpCode?
   weightLogs    WeightLog[]
-  calorieLogs   calorieLog[]
+  calorieLogs   CalorieLog[]
   userRewards   UserReward[]
 
   @@index([email])
@@ -177,7 +177,7 @@ model WeightLog {
   @@index([userId])
 }
 
-model calorieLog {
+model CalorieLog {
   id       String   @id @default(uuid()) @db.Uuid
   userId   String   @db.Uuid
   calories Int
