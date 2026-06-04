@@ -208,7 +208,6 @@ export const missionApi = {
         signal: controller.signal,
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          // Tidak set Content-Type — biarkan browser otomatis set multipart/form-data
         },
         body: formData,
       });
