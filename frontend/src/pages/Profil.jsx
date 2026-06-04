@@ -17,7 +17,7 @@ import {
 import Navbar from "../components/Navbar";
 import WeightInputModal from "../components/WeightInputModal";
 import Streak from "../components/ui/streak";
-import { authApi, userApi } from "../lib/api";
+import { authApi, userApi, healthApi } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
 // ─── Konstanta ────────────────────────────────────────────────────────────────
@@ -55,7 +55,8 @@ export default function Profile() {
   const [profileError, setProfileError] = useState("");
   const [isProfileLoading, setIsProfileLoading] = useState(true);
 
-  const caloriesBurnedThisWeek = 0;
+ const [caloriesBurnedThisWeek, setCaloriesBurnedThisWeek] = useState(0);
+  const [calorieDailyLogs, setCalorieDailyLogs] = useState([]);
 
   // ─── Weight log state (TODO: fetch GET /api/weight-logs) ──────────────────
   // Struktur tiap item: { id, date (ISO string), weight (number), note (string) }
@@ -105,9 +106,59 @@ export default function Profile() {
       }
     };
 
+    const loadCalorieLogs = async () => {
+      try {
+        const res = await healthApi.getCalorieLogs();
+        if (ignore) return;
+        
+        const dataKalori = res.data?.data || {};
+        
+        setCaloriesBurnedThisWeek(dataKalori.weeklyBurnedFromLog || 0);
+        
+        setCalorieDailyLogs(dataKalori.dailyLogs || []);
+        console.log("Data Kalori:", dataKalori.dailyLogs);
+        
+      } catch (err) {
+        if (!ignore) console.error("Gagal memuat data kalori:", err);
+      }
+    };
+
     loadProfile();
     return () => { ignore = true; };
   }, [setUser]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    const loadWeightLogs = async () => {
+      try {
+        // Tentukan parameter range berdasarkan state chartPeriod
+        const range = chartPeriod === "mingguan" ? "week" : "month";
+        
+        // Memanggil API dengan parameter range yang dinamis
+        const resLogs = await healthApi.getWeightLogs(range);
+        const rawLogs = resLogs.data?.weightLogs || [];
+        
+        if (ignore) return;
+
+        const fetchedLogs = rawLogs
+          .filter(log => log.weight > 0) 
+          .map(log => ({
+            id: log.id || Math.random().toString(), 
+            date: log.loggedAt || log.date,         
+            weight: log.weight,                     
+            note: log.note || ""
+          }));
+
+        setWeightLog(fetchedLogs);
+      } catch (logErr) {
+        if (!ignore) console.error("Gagal memuat riwayat berat badan:", logErr);
+      }
+    };
+
+    loadWeightLogs();
+    return () => { ignore = true; };
+  }, [chartPeriod]);
 
   // ─── Derived values ───────────────────────────────────────────────────────
   const hasLog        = weightLog.length > 0;
@@ -118,7 +169,7 @@ export default function Profile() {
   const weightDiff    = prevEntry ? +(currentWeight - prevEntry.weight).toFixed(1) : 0;
 
   // ─── Chart helpers ────────────────────────────────────────────────────────
-  const chartEntries = weightLog.slice(-7);
+  const chartEntries = chartPeriod === "mingguan" ? weightLog.slice(-7) : weightLog;
   const hasChart     = chartEntries.length >= 2;
   const chartMin     = hasChart ? Math.floor(Math.min(...chartEntries.map(e => e.weight)) - 2) : 0;
   const chartMax     = hasChart ? Math.ceil(Math.max(...chartEntries.map(e => e.weight)) + 2) : 10;
@@ -211,15 +262,35 @@ export default function Profile() {
   };
 
   // TODO: ganti dengan POST /api/weight-logs, lalu update weightLog dari response
-  const handleWeightSuccess = (value, note) => {
-    const today = new Date().toISOString().split("T")[0];
-    setWeightLog(prev => [
-      ...prev,
-      { id: Date.now(), date: today, weight: value, note: note ?? "" },
-    ]);
-    setShowWeightModal(false);
-    setShowSuccess(true);
-    setTimeout(() => setShowSuccess(false), 3000);
+  const handleWeightSuccess = async (value, note) => {
+    try {
+      const payload = { weight: value };
+
+      const res = await healthApi.createWeightLog(payload);
+
+      const newLog = res.data?.weightLog || {};
+      const today = newLog.loggedAt 
+        ? new Date(newLog.loggedAt).toISOString().split("T")[0] 
+        : new Date().toISOString().split("T")[0];
+
+      setWeightLog(prev => [
+        ...prev,
+        { 
+          id: newLog.id || Date.now(), 
+          date: today, 
+          weight: value, 
+          note: note ?? "" 
+        },
+      ]);
+
+      setShowWeightModal(false);
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 3000);
+
+    } catch (error) {
+      console.error("Gagal mencatat berat badan:", error);
+      alert(error.message || "Gagal mencatat berat badan ke server. Silakan coba lagi.");
+    }
   };
 
   // ─── Render ───────────────────────────────────────────────────────────────

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import SetupTargetModal from "../components/SetupTargetModal";
+import { healthApi } from "../lib/api";
 
 const INITIAL_TASKS = {
   "hari-ini": [],
@@ -52,30 +53,49 @@ export default function Tugas() {
   const [showSetupModal, setShowSetupModal] = useState(false);
 
   // Setelah setup selesai, tandai done dan isi tugas
-  const handleSetupConfirm = ({ gender, age, height, currentWeight: newWeight, targetWeight: newTarget, tasks: newTasks }) => {
+  const handleSetupConfirm = async ({ gender, age, height, currentWeight: newWeight, targetWeight: newTarget, tasks: newTasks }) => {
+    
+    const profilePayload = {
+      gender,
+      age,
+      heightCm: height,
+      weightKg: newWeight,
+      goalWeight: newTarget,
+    };
+
     try {
-      localStorage.setItem("healthyup:setupDone", "true");
-      localStorage.removeItem("healthyup:newUser");
-      const stored = JSON.parse(localStorage.getItem("healthyup:weightLog")) ?? {};
-      localStorage.setItem("healthyup:weightLog", JSON.stringify({
-        ...stored,
-        currentWeight: newWeight,
-        previousWeight: stored.currentWeight ?? newWeight,
-        targetWeight: newTarget,
+      await healthApi.createProfile(profilePayload);
+
+      try {
+        localStorage.setItem("healthyup:setupDone", "true");
+        localStorage.removeItem("healthyup:newUser");
+        const stored = JSON.parse(localStorage.getItem("healthyup:weightLog")) ?? {};
+        localStorage.setItem("healthyup:weightLog", JSON.stringify({
+          ...stored,
+          currentWeight: newWeight,
+          previousWeight: stored.currentWeight ?? newWeight,
+          targetWeight: newTarget,
+        }));
+      } catch (e) {
+        console.error("Gagal update localStorage", e);
+      }
+
+      setTasks(prev => ({
+        ...prev,
+        "hari-ini": newTasks.map(t => ({
+          id: t.id,
+          title: t.title,
+          category: t.category,
+          completed: false,
+          points: t.points,
+        })),
       }));
-    } catch {}
-    setTasks(prev => ({
-      ...prev,
-      "hari-ini": newTasks.map(t => ({
-        id: t.id,
-        title: t.title,
-        category: t.category,
-        completed: false,
-        points: t.points,
-      })),
-    }));
-    setSetupDone(true);
-    setShowSetupModal(false);
+      setSetupDone(true);
+      // setShowSetupModal(false);
+
+    } catch (error) {
+      alert("Terjadi kesalahan saat menyimpan data ke server. Silakan periksa koneksi atau coba lagi.");
+    }
   };
 
   const [activeTab, setActiveTab] = useState("hari-ini");

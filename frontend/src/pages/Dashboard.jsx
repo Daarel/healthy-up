@@ -7,6 +7,7 @@ import WeightReminderBanner from "../components/WeightReminderBanner";
 import WeightInputModal from "../components/WeightInputModal";
 import SetupTargetModal from "../components/SetupTargetModal";
 import Streak from "../components/ui/streak";
+import { healthApi } from "../lib/api";
 
 const WEIGHT_STORAGE_KEY = "healthyup:weightLog";
 const SETUP_DONE_KEY     = "healthyup:setupDone";
@@ -110,7 +111,22 @@ export default function Dashboard() {
   };
 
   // Dipakai baik untuk setup awal maupun ubah target dari WeightCard
-  const handleSetupConfirm = ({ gender, age, height, currentWeight: newWeight, targetWeight: newTarget, tasks: newTasks }) => {
+  const handleSetupConfirm = async ({ gender, age, height, currentWeight: newWeight, targetWeight: newTarget, tasks: newTasks }) => {
+
+    const profilePayload = {
+      gender,
+      age,
+      heightCm: height,
+      weightKg: newWeight,
+      goalWeight: newTarget,
+    };
+
+    try {
+      const result = await healthApi.createProfile(profilePayload);
+    } catch (err) {
+      console.dir(err); 
+    }
+
     if (newWeight !== currentWeight) {
       setPreviousWeight(currentWeight);
       setCurrentWeight(newWeight);

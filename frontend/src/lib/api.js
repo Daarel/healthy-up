@@ -135,3 +135,30 @@ export const userApi = {
     });
   },
 };
+
+export const healthApi = {
+  createProfile: async (profileData) => {
+    const token = getToken();
+    
+    const response = await request("/health-profiles", {
+      method: "POST",
+      body: JSON.stringify(profileData),
+    });
+    return response;
+  },
+  getMyProfile: async () => {
+    return request("/health-profiles");
+  },
+  createWeightLog: async (weightData) => {
+    return request("/health-profiles/weight-logs", {
+      method: "POST",
+      body: JSON.stringify(weightData),
+    });
+  },
+  getWeightLogs: async (range = "month") => {
+    return request(`/health-profiles/weight-logs?range=${range}`);
+  },
+  getCalorieLogs: async () => {
+    return request("/health-profiles/calories-logs");
+  },
+};
