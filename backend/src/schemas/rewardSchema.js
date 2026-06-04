@@ -42,17 +42,17 @@ const createRewardSchema = z.strictObject({
   category: z
     .string({ required_error: 'Kategori wajib diisi' })
     .trim()
-    .toLowerCase(), // Pastikan masuk ke database dalam huruf kecil semua
-  pointsCost: z
+    .toLowerCase(),
+  pointsCost: z.coerce
     .number({ required_error: 'Harga poin wajib diisi' })
     .int()
     .positive(),
-  stockQuantity: z
+  stockQuantity: z.coerce
     .number({ required_error: 'Stok awal wajib diisi' })
     .int()
     .nonnegative()
     .default(0),
-  isActive: z.boolean().optional().default(true),
+  isActive: z.coerce.boolean().optional().default(true),
 });
 
 const getRewardsQuerySchema = z.object({

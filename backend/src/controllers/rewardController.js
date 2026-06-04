@@ -51,7 +51,25 @@ class RewardController {
   static async createReward(req, res) {
     try {
       const validatedData = createRewardSchema.parse(req.body);
-      const newReward = await RewardService.createReward(validatedData);
+
+      let imageUrl = null;
+
+      if (req.file) {
+        const fileBase64 = req.file.buffer.toString('base64');
+        const fileUri = `data:${req.file.mimetype};base64,${fileBase64}`;
+
+        const uploadResponse = await cloudinary.uploader.upload(fileUri, {
+          folder: 'healthyup/rewards',
+          resource_type: 'auto',
+        });
+
+        imageUrl = uploadResponse.secure_url;
+      }
+
+      const newReward = await RewardService.createReward({
+        ...validatedData,
+        imageUrl,
+      });
 
       return res.status(201).json({
         status: 'success',
@@ -62,6 +80,14 @@ class RewardController {
       if (err instanceof z.ZodError) {
         return RewardController.handleZodError(err, res);
       }
+
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Ukuran file terlalu besar. Maksimal 3 MB.',
+        });
+      }
+
       return RewardController.handleServerError(
         err,
         res,

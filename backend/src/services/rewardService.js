@@ -22,10 +22,11 @@ class RewardService {
     const newReward = await prisma.reward.create({
       data: {
         name: rewardData.name,
-        category: rewardData.category, // Tambahan baru
+        category: rewardData.category,
         pointsCost: rewardData.pointsCost,
         stockQuantity: rewardData.stockQuantity,
         isActive: rewardData.isActive,
+        imageUrl: rewardData.imageUrl || null,
       },
     });
 
