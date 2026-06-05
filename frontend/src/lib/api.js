@@ -1,61 +1,17 @@
-const API_BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5001/api/v1";
-const REQUEST_TIMEOUT_MS = 20000;
-
-const TOKEN_KEY = "healthyup:token";
-function getToken() {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-function setToken(token) {
-  localStorage.setItem(TOKEN_KEY, token);
-}
-
-function removeToken() {
-  localStorage.removeItem(TOKEN_KEY);
-}
-
-async function request(path, options = {}) {
-  const token = getToken();
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-  try {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...options.headers,
-      },
-    });
-
-    const data = await res.json().catch(() => null);
-    if (!res.ok) {
-      const message =
-        data?.message ||
-        data?.errors?.[0]?.message ||
-        "Terjadi kesalahan pada server.";
-      throw new Error(message);
-    }
-    return data;
-  } catch (err) {
-    if (err.name === "AbortError") {
-      throw new Error("Server terlalu lama merespons. Coba lagi beberapa saat lagi.");
-    }
-    if (err.message) {
-      throw err;
-    }
-    throw new Error("Tidak bisa terhubung ke server. Periksa koneksi atau coba lagi nanti.");
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
+import {
+  removeToken,
+  request,
+  requestForm,
+  setToken,
+  getToken,
+  REQUEST_TIMEOUT_MS,
+  API_BASE_URL,
+} from './apiClient';
 
 export const authApi = {
   login: async (email, password) => {
-    const data = await request("/auth/login", {
-      method: "POST",
+    const data = await request('/auth/login', {
+      method: 'POST',
       body: JSON.stringify({ email, password }),
     });
     if (data.data?.token) {
@@ -64,8 +20,8 @@ export const authApi = {
     return data;
   },
   register: async (username, email, password) => {
-    const data = await request("/auth/register", {
-      method: "POST",
+    const data = await request('/auth/register', {
+      method: 'POST',
       body: JSON.stringify({ username, email, password }),
     });
     if (data.data?.token) {
@@ -75,22 +31,22 @@ export const authApi = {
   },
   logout: async () => {
     try {
-      return await request("/auth/logout", {
-        method: "POST",
+      return await request('/auth/logout', {
+        method: 'POST',
       });
     } finally {
       removeToken();
     }
   },
   forgotPassword: async (email) => {
-    return request("/auth/forgot-password", {
-      method: "POST",
+    return request('/auth/forgot-password', {
+      method: 'POST',
       body: JSON.stringify({ email }),
     });
   },
   resetPassword: async (email, otp, newPassword, confirmedPassword) => {
-    return request("/auth/reset-password", {
-      method: "POST",
+    return request('/auth/reset-password', {
+      method: 'POST',
       body: JSON.stringify({
         email: email.trim(),
         otp: otp.trim(),
@@ -100,69 +56,93 @@ export const authApi = {
     });
   },
   resendOtp: async (email) => {
-    return request("/auth/resend-otp", {
-      method: "POST",
+    return request('/auth/resend-otp', {
+      method: 'POST',
       body: JSON.stringify({ email }),
     });
   },
 };
+
 export const userApi = {
   getAll: async ({ page = 1, limit = 20 } = {}) => {
     return request(`/users/all-users?page=${page}&limit=${limit}`);
   },
   deleteById: async (id) => {
     return request(`/users/${id}`, {
-      method: "DELETE",
+      method: 'DELETE',
     });
   },
   getMe: async () => {
-    return request("/users/user");
+    return request('/users/user');
   },
   deleteMe: async () => {
     try {
-      return await request("/users/user", {
-        method: "DELETE",
+      return await request('/users/user', {
+        method: 'DELETE',
       });
     } finally {
       removeToken();
     }
   },
   levelUp: async () => {
-    return request("/users/user/level-up", {
-      method: "POST",
+    return request('/users/user/level-up', {
+      method: 'POST',
     });
   },
   updatePicture: async (profilePicture) => {
-    return request("/users/user/picture", {
-      method: "PATCH",
-      body: JSON.stringify({ profilePicture }),
+    const formData = new FormData();
+    formData.append('profilePicture', profilePicture);
+    return requestForm('/users/profile/picture', formData, { method: 'PATCH' });
+  },
+};
+
+export const rewardApi = {
+  getAll: async (category = 'semua') => {
+    const query =
+      category && category !== 'semua'
+        ? `?category=${encodeURIComponent(category)}`
+        : '';
+    return request(`/rewards${query}`);
+  },
+  getMine: async (status = 'all') => {
+    return request(`/rewards/my-rewards?status=${encodeURIComponent(status)}`);
+  },
+  claim: async (rewardId) => {
+    return request('/rewards/claim', {
+      method: 'POST',
+      body: JSON.stringify({ rewardId }),
+    });
+  },
+  verify: async (redemptionCode) => {
+    return request('/rewards/verify', {
+      method: 'POST',
+      body: JSON.stringify({ redemptionCode }),
     });
   },
 };
 
 export const healthApi = {
   createProfile: async (profileData) => {
-    
-    const response = await request("/health-profiles", {
-      method: "POST",
+    const response = await request('/health-profiles', {
+      method: 'POST',
       body: JSON.stringify(profileData),
     });
     return response;
   },
   getMyProfile: async () => {
-    return request("/health-profiles"); // unusend api
+    return request('/health-profiles'); // unusend api
   },
   createWeightLog: async (weightData) => {
-    return request("/health-profiles/weight-logs", {
-      method: "POST",
+    return request('/health-profiles/weight-logs', {
+      method: 'POST',
       body: JSON.stringify(weightData),
     });
   },
-  getWeightLogs: async (range = "month") => {
+  getWeightLogs: async (range = 'month') => {
     return request(`/health-profiles/weight-logs?range=${range}`);
   },
   getCalorieLogs: async () => {
-    return request("/health-profiles/calories-logs");
+    return request('/health-profiles/calories-logs');
   },
 };
 
@@ -170,9 +150,9 @@ export const missionApi = {
   // GET /api/v1/missions — ambil semua misi user
   getAll: async ({ date, status } = {}) => {
     const params = new URLSearchParams();
-    if (date)   params.append("date", date);
-    if (status) params.append("status", status);
-    const query = params.toString() ? `?${params}` : "";
+    if (date) params.append('date', date);
+    if (status) params.append('status', status);
+    const query = params.toString() ? `?${params}` : '';
     return request(`/missions${query}`);
   },
 
@@ -183,12 +163,12 @@ export const missionApi = {
 
   // POST /api/v1/missions/generate — generate misi via AI
   generate: async () => {
-    return request("/missions/generate", { method: "POST" });
+    return request('/missions/generate', { method: 'POST' });
   },
 
   // GET /api/v1/missions/progress/weekly — progress mingguan
   getWeeklyProgress: async () => {
-    return request("/missions/progress/weekly");
+    return request('/missions/progress/weekly');
   },
 
   // PATCH /api/v1/missions/:id/status — tandai selesai + upload bukti
@@ -199,12 +179,12 @@ export const missionApi = {
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
     const formData = new FormData();
-    formData.append("status", status);
-    if (proofImageFile) formData.append("proofImage", proofImageFile);
+    formData.append('status', status);
+    if (proofImageFile) formData.append('proofImage', proofImageFile);
 
     try {
       const res = await fetch(`${API_BASE_URL}/missions/${id}/status`, {
-        method: "PATCH",
+        method: 'PATCH',
         signal: controller.signal,
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -214,11 +194,12 @@ export const missionApi = {
 
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        throw new Error(data?.message || "Gagal memperbarui status misi.");
+        throw new Error(data?.message || 'Gagal memperbarui status misi.');
       }
       return data;
     } catch (err) {
-      if (err.name === "AbortError") throw new Error("Server terlalu lama merespons.");
+      if (err.name === 'AbortError')
+        throw new Error('Server terlalu lama merespons.');
       throw err;
     } finally {
       clearTimeout(timeoutId);
