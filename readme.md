@@ -75,4 +75,4 @@ Arsitektur RESTful API yang kokoh dan aman:
 Pastikan Anda telah menginstal:
 * Node.js
 * PostgreSQL
-* Git
+* Git 
