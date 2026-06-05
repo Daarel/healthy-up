@@ -285,7 +285,8 @@ class MissionController {
     try {
       const { verificationStatus = 'pending' } = req.query;
 
-      const missions = await MissionService.getPendingVerifications(verificationStatus);
+      const missions =
+        await MissionService.getPendingVerifications(verificationStatus);
 
       return res.status(200).json({
         status: 'success',

@@ -31,12 +31,12 @@ class HealthProfileService {
   static async getCalorieLog(userId) {
     const endDate = new Date();
     const startDate = new Date();
-    
+
     startDate.setDate(endDate.getDate() - 6);
-    
+
     startDate.setHours(0, 0, 0, 0);
     endDate.setHours(23, 59, 59, 999);
-  
+
     const rawLogs = await prisma.calorieLog.findMany({
       where: {
         userId: userId,
@@ -52,7 +52,7 @@ class HealthProfileService {
         completedAt: { gte: startDate, lte: endDate },
       },
     });
-  
+
     const logMap = {};
     rawLogs.forEach((log) => {
       const dateString = log.loggedAt.toISOString().split('T')[0];
@@ -62,7 +62,8 @@ class HealthProfileService {
     physicalMissions.forEach((mission) => {
       if (mission.completedAt && mission.caloriesImpact) {
         const dateString = mission.completedAt.toISOString().split('T')[0];
-        logMap[dateString] = (logMap[dateString] || 0) + Math.abs(mission.caloriesImpact);
+        logMap[dateString] =
+          (logMap[dateString] || 0) + Math.abs(mission.caloriesImpact);
       }
     });
 
@@ -78,7 +79,7 @@ class HealthProfileService {
         date: dateString,
         calories: dailyCalories,
       });
-      
+
       weeklyTotal += dailyCalories;
 
       currentDate.setDate(currentDate.getDate() + 1);

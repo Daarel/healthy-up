@@ -213,7 +213,9 @@ class MissionService {
         const now = new Date();
         const todayStr = now.toISOString().split('T')[0];
         const lastUpdate = mission.user.lastStreakUpdateAt;
-        const lastUpdateStr = lastUpdate ? lastUpdate.toISOString().split('T')[0] : null;
+        const lastUpdateStr = lastUpdate
+          ? lastUpdate.toISOString().split('T')[0]
+          : null;
 
         let newStreakCount = mission.user.streakCount;
         let newLastUpdateAt = lastUpdate;
@@ -239,7 +241,12 @@ class MissionService {
             streakCount: newStreakCount,
             lastStreakUpdateAt: newLastUpdateAt,
           },
-          select: { experiencePoints: true, rewardPoints: true, level: true, streakCount: true },
+          select: {
+            experiencePoints: true,
+            rewardPoints: true,
+            level: true,
+            streakCount: true,
+          },
         });
 
         return { mission: approvedMission, userStats: updatedUser };
@@ -299,7 +306,7 @@ class MissionService {
     if (verificationStatus === 'all') {
       whereClause.OR = [
         { status: 'completed' },
-        { verificationStatus: 'rejected' }
+        { verificationStatus: 'rejected' },
       ];
     } else if (verificationStatus === 'rejected') {
       whereClause.verificationStatus = 'rejected';

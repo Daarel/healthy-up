@@ -14,7 +14,12 @@ const upload = multer({
 router
   .route('/')
   .get(protect, RewardController.getRewards)
-  .post(protect, adminOnly, upload.single('image'), RewardController.createReward);
+  .post(
+    protect,
+    adminOnly,
+    upload.single('image'),
+    RewardController.createReward,
+  );
 
 router.route('/:id').delete(protect, adminOnly, RewardController.deleteReward);
 

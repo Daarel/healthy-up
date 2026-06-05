@@ -8,8 +8,7 @@ const missionIdParamSchema = z.strictObject({
 
 const updateMissionStatusSchema = z.strictObject({
   status: z.enum(['completed', 'failed'], {
-    invalid_type_error:
-      "Status hanya boleh 'completed', atau 'failed'",
+    invalid_type_error: "Status hanya boleh 'completed', atau 'failed'",
     required_error: 'Status misi wajib diisi',
   }),
   proofImagePath: z.string().url('Format URL gambar tidak valid').optional(),
