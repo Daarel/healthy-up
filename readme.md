@@ -21,6 +21,16 @@
 
 Projek ini dikembangkan sebagai untuk **Capstone Project**, Coding Camp 2026 powered by DBS. Aplikasi ini melacak metrik kesehatan seperti BMI dan kalori, menugaskan misi harian yang dipersonalisasi oleh AI, dan memverifikasi penyelesaian tugas melalui sistem *dashboard* Admin yang aman.
 
+---
+
+## 🔗 Referensi & Tautan Penting
+
+* **Swagger API Documentation:** [API Docs](https://healthy-up-production.up.railway.app/api-docs)
+* **HuggingFace API (AI):** [Generate Quests API](https://dkarnnd-ai-healthyup.hf.space/api/generate_quests)
+* **HuggingFace Repository:** [dkarnnd/ai-healthyup](https://huggingface.co/spaces/dkarnnd/ai-healthyup/tree/main)
+* **Streamlit Dashboard:** [Data Dashboard](https://dashboard-capstone-xk3osna52wwkubxjgvsyyj.streamlit.app/)
+* **Dataset yang Digunakan:** [Estimation of obesity levels (UCI Repository)](https://archive.ics.uci.edu/dataset/544/estimation+of+obesity+levels+based+on+eating+habits+and+physical+condition)
+
 ## ✨ Fitur Utama
 
 ### 🤖 AI-Generated Quests
