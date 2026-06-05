@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import Tugas from '../pages/Tugas';
 import * as AuthContextModule from '../context/AuthContext';
 
 vi.mock('../components/SetupTargetModal', () => ({

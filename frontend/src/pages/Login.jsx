@@ -1,5 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import Logo from "../components/ui/logo";
 import { useNavigateWithTransition } from "../lib/useNavigateWithTransition";
 import { authApi } from "../lib/api";
 import { useAuth } from "../context/AuthContext";

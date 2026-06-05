@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { TrendingDown, TrendingUp, ArrowRight } from "lucide-react";
 
 /**
  * Kartu ringkasan berat badan untuk Dashboard.

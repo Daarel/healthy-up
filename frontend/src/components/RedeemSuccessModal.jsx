@@ -1,3 +1,4 @@
+import { Gift, CheckCircle2, PartyPopper, Copy, Check, X } from "lucide-react";
 
 /**
  * Modal yang muncul setelah penukaran voucher berhasil.

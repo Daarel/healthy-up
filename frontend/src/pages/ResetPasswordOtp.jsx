@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { maskEmail } from "../lib/utils";
 import { authApi } from "../lib/api";
 

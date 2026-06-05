@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import WeightInputModal from '../components/WeightInputModal';
 
 const renderModal = (overrides = {}) => {
   const props = {

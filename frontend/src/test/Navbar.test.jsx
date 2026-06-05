@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 import * as AuthContextModule from '../context/AuthContext';
 import { authApi } from '../lib/api';
 

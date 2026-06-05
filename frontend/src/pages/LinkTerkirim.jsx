@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Mail, RefreshCw } from "lucide-react";
 
 export default function LinkTerkirim() {
   const navigate = useNavigate();

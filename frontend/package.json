@@ -7,7 +7,6 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
     "preview": "vite preview",
     "test": "vitest"
   },
@@ -34,7 +33,6 @@
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
-    "eslint-plugin-unused-imports": "^4.4.1",
     "globals": "^17.4.0",
     "jsdom": "^29.1.1",
     "postcss": "^8.5.14",

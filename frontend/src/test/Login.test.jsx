@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import Login from '../pages/Login';
 import * as AuthContextModule from '../context/AuthContext';
 
 // Mock Logo and useNavigateWithTransition

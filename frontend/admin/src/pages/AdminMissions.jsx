@@ -1,5 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-
+import {
+  CheckCircle, XCircle, Loader2, ImageOff,
+  ChevronLeft, ChevronRight, X, RefreshCw, AlertCircle,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { adminApi } from "@/lib/api";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

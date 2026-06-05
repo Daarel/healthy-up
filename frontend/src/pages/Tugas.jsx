@@ -1,10 +1,21 @@
- 
+/* eslint-disable no-unused-vars */
 
 import { useEffect, useRef, useState } from 'react';
 import {
+  CheckCircle2,
+  Clock,
+  Star,
+  Upload,
+  Eye,
+  Circle,
+  Inbox,
+  HelpCircle,
+  X,
+  CloudUpload,
   Camera,
   Clapperboard,
   Lightbulb,
+  ClipboardList,
   // icon misi dari backend
   Brain,
   Dumbbell,
@@ -20,6 +31,8 @@ import {
   Bike,
   Salad,
 } from 'lucide-react';
+import Navbar from '../components/Navbar';
+import SetupTargetModal from '../components/SetupTargetModal';
 import { missionApi, healthApi } from '../lib/api';
 
 // Map nama icon dari backend → Lucide component
@@ -154,28 +167,13 @@ export default function Tugas() {
     try {
       // 2. Generate misi via AI
       await missionApi.generate();
-    } catch (err) {
-      if (
-        !err.message?.toLowerCase().includes('sudah membuat') &&
-        !err.message?.toLowerCase().includes('already')
-      ) {
-        setError(err.message);
-        throw err;
-      }
-    }
-
-    try {
-      // 3. Ambil misi yang baru dibuat (atau yang sudah ada)
+      // 3. Ambil misi yang baru dibuat
       const res = await missionApi.getAll();
-      const generatedTasks = res.data?.missions || [];
-      if (generatedTasks.length === 0) {
-        throw new Error("Gagal mengambil data tugas dari server.");
-      }
-      setTasks(generatedTasks);
-      return generatedTasks;
+      setTasks(res.data.missions);
+      return res.data.missions;
     } catch (err) {
       setError(err.message);
-      throw err;
+      return [];
     } finally {
       setLoading(false);
     }

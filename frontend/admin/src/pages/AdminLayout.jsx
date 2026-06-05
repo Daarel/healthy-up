@@ -1,5 +1,5 @@
-import { useNavigate } from "react-router-dom";
-import { Users, ClipboardCheck, Gift } from "lucide-react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { Users, ClipboardCheck, Gift, LogOut } from "lucide-react";
 import { adminApi } from "@/lib/api";
 
 const navItems = [

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Camera, Clapperboard, Lightbulb } from "lucide-react";
+import { X, Camera, Clapperboard, Lightbulb } from "lucide-react";
 
 const GUIDE_PAGES = [
   {

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Scale, X } from "lucide-react";
 
 /**
  * Modal input berat badan yang dapat digunakan di Dashboard maupun Profil.
