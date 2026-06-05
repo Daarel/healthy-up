@@ -19,12 +19,14 @@
 ## 📖 Tentang Projek
 **HealthyUp** adalah aplikasi berbasis web yang menggabungkan kecerdasan buatan (*Artificial Intelligence*) dengan konsep gamifikasi untuk membantu pengguna membangun kebiasaan hidup sehat secara konsisten.
 
-Projek ini dikembangkan sebagai untuk **Capstone Project**, Coding Camp 2026 powered by DBS. Aplikasi ini melacak metrik kesehatan seperti BMI dan kalori, menugaskan misi harian yang dipersonalisasi oleh AI, dan memverifikasi penyelesaian tugas melalui sistem *dashboard* Admin yang aman.
+Projek ini dikembangkan sebagai tugas **Capstone Project**, Coding Camp 2026 powered by DBS. Aplikasi ini melacak metrik kesehatan seperti BMI dan kalori, menugaskan misi harian yang dipersonalisasi oleh AI, dan memverifikasi penyelesaian tugas melalui sistem *dashboard* Admin yang aman.
 
 ---
 
 ## 🔗 Referensi & Tautan Penting
 
+* **Web Admin:** [HealthyUp Admin](https://vercel.com/ghifari-15s-projects/healthy-up-admin)
+* **Web User:** [HealthyUp App](https://healthy-up-frontend.vercel.app/tugas)
 * **Swagger API Documentation:** [API Docs](https://healthy-up-production.up.railway.app/api-docs)
 * **HuggingFace API (AI):** [Generate Quests API](https://dkarnnd-ai-healthyup.hf.space/api/generate_quests)
 * **HuggingFace Repository:** [dkarnnd/ai-healthyup](https://huggingface.co/spaces/dkarnnd/ai-healthyup/tree/main)
@@ -75,4 +77,32 @@ Arsitektur RESTful API yang kokoh dan aman:
 Pastikan Anda telah menginstal:
 * Node.js
 * PostgreSQL
-* Git 
+* Git
+
+### 2. Instalasi & Konfigurasi Lingkungan
+
+1. **Setup Environment Variables (.env)**
+   Anda perlu membuat dan mengisi file `.env` di masing-masing folder (`frontend`, `backend`, dan `frontend/admin`). Anda dapat menggunakan file `.env.example` yang tersedia di masing-masing direktori sebagai panduan (contoh) nilai apa saja yang dibutuhkan.
+
+2. **Instalasi Dependency (npm i)**
+   Instal semua paket yang diperlukan dengan menjalankan perintah `npm i` (atau `npm install`) pada ketiga direktori utama:
+   ```bash
+   # Terminal 1: Frontend
+   cd frontend
+   npm i
+
+   # Terminal 2: Admin Dashboard
+   cd frontend/admin
+   npm i
+
+   # Terminal 3: Backend
+   cd backend
+   npm i
+   ```
+
+3. **Generate Prisma Client (Backend)**
+   Khusus untuk folder `backend`, setelah melakukan `npm i`, Anda wajib menjalankan perintah berikut agar Prisma Client dapat di-generate sesuai dengan skema database Anda:
+   ```bash
+   cd backend
+   npx prisma generate
+   ```
