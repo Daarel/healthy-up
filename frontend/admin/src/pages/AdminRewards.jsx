@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Plus, Trash2, Loader2, ToggleLeft, ToggleRight, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Plus, Trash2, Loader2, ToggleLeft, ToggleRight, X, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { adminApi } from "@/lib/api";
@@ -10,6 +10,9 @@ const EMPTY_FORM = {
   pointsCost: "",
   stockQuantity: "",
   isActive: true,
+  imageUrl: null,    // URL string (dari server nanti)
+  imagePreview: null, // base64 preview lokal
+  imageFile: null,    // File object untuk upload
 };
 
 export default function AdminRewards() {
@@ -19,27 +22,29 @@ export default function AdminRewards() {
   const [errors, setErrors] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState(null);
-  const [togglingId, setTogglingId] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [apiError, setApiError] = useState("");
-
-  const loadRewards = async () => {
-    setIsLoading(true);
-    setApiError("");
-    try {
-      const res = await adminApi.getRewards();
-      setRewards(res.data?.rewards ?? []);
-    } catch (err) {
-      setApiError(err.message || "Gagal memuat data reward.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const [togglingId, setTogglingId] = useState(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
-    const timeoutId = setTimeout(loadRewards, 0);
-    return () => clearTimeout(timeoutId);
+    let ignore = false;
+    const loadRewards = async () => {
+      setIsLoading(true);
+      setError("");
+      try {
+        const res = await adminApi.getRewards("semua");
+        if (!ignore) setRewards(res.data.rewards || []);
+      } catch (err) {
+        if (!ignore) setError(err.message || "Gagal memuat reward.");
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    };
+
+    loadRewards();
+    return () => { ignore = true; };
   }, []);
 
   const openAdd = () => {
@@ -48,14 +53,46 @@ export default function AdminRewards() {
     setModal("add");
   };
 
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validasi tipe file
+    if (!file.type.startsWith("image/")) {
+      setErrors((er) => ({ ...er, image: "File harus berupa gambar." }));
+      return;
+    }
+    // Validasi ukuran (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setErrors((er) => ({ ...er, image: "Ukuran gambar maksimal 2MB." }));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      setForm((f) => ({
+        ...f,
+        imageFile: file,
+        imagePreview: ev.target.result,
+      }));
+      setErrors((er) => ({ ...er, image: undefined }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const removeImage = () => {
+    setForm((f) => ({ ...f, imageFile: null, imagePreview: null, imageUrl: null }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const validate = () => {
     const e = {};
     if (!form.name.trim()) e.name = "Nama reward wajib diisi.";
-    if (!form.category.trim()) e.category = "Kategori wajib diisi.";
+    if (!form.category.trim()) e.category = "Kategori reward wajib diisi.";
     if (!form.pointsCost || isNaN(Number(form.pointsCost)) || Number(form.pointsCost) <= 0)
       e.pointsCost = "Harga poin harus angka positif.";
     if (form.stockQuantity === "" || isNaN(Number(form.stockQuantity)) || Number(form.stockQuantity) < 0)
-      e.stockQuantity = "Stok harus angka >= 0.";
+      e.stockQuantity = "Stok harus angka ≥ 0.";
     return e;
   };
 
@@ -63,7 +100,7 @@ export default function AdminRewards() {
     const e = validate();
     if (Object.keys(e).length > 0) { setErrors(e); return; }
     setIsSaving(true);
-    setApiError("");
+    setError("");
     try {
       const res = await adminApi.createReward({
         name: form.name.trim(),
@@ -71,13 +108,13 @@ export default function AdminRewards() {
         pointsCost: Number(form.pointsCost),
         stockQuantity: Number(form.stockQuantity),
         isActive: form.isActive,
+        imageFile: form.imageFile,
       });
-
-      const reward = res.data?.reward;
-      if (reward) setRewards((prev) => [reward, ...prev]);
+      const newReward = res.data.reward;
+      setRewards((prev) => newReward.isActive ? [newReward, ...prev] : prev);
       setModal(null);
     } catch (err) {
-      setApiError(err.message || "Gagal menyimpan reward.");
+      setError(err.message || "Gagal menyimpan reward.");
     } finally {
       setIsSaving(false);
     }
@@ -85,15 +122,16 @@ export default function AdminRewards() {
 
   const handleToggleActive = async (id) => {
     setTogglingId(id);
-    setApiError("");
+    setError("");
     try {
       const res = await adminApi.toggleReward(id);
-      const updatedReward = res.data?.reward;
-      if (updatedReward) {
-        setRewards((prev) => prev.map((reward) => (reward.id === id ? updatedReward : reward)));
-      }
+      const updatedReward = res.data.reward;
+      setRewards((prev) => updatedReward.isActive
+        ? prev.map((r) => (r.id === id ? updatedReward : r))
+        : prev.filter((r) => r.id !== id)
+      );
     } catch (err) {
-      setApiError(err.message || "Gagal mengubah status reward.");
+      setError(err.message || "Gagal mengubah status reward.");
     } finally {
       setTogglingId(null);
     }
@@ -101,12 +139,12 @@ export default function AdminRewards() {
 
   const handleDelete = async (id) => {
     setDeletingId(id);
-    setApiError("");
+    setError("");
     try {
       await adminApi.deleteReward(id);
       setRewards((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
-      setApiError(err.message || "Gagal menghapus reward.");
+      setError(err.message || "Gagal menghapus reward.");
     } finally {
       setDeletingId(null);
       setConfirmDelete(null);
@@ -118,7 +156,7 @@ export default function AdminRewards() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-gray-800">Manajemen Reward</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{rewards.length} reward tersedia</p>
+          <p className="text-sm text-gray-500 mt-0.5">{rewards.length} reward aktif tersedia</p>
         </div>
         <Button size="sm" onClick={openAdd} className="bg-[#006e2f] hover:bg-[#005823] gap-1.5">
           <Plus className="w-4 h-4" />
@@ -126,10 +164,8 @@ export default function AdminRewards() {
         </Button>
       </div>
 
-      {apiError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-          {apiError}
-        </div>
+      {error && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md px-3 py-2">{error}</p>
       )}
 
       {/* Tabel */}
@@ -139,8 +175,8 @@ export default function AdminRewards() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
+                  <th className="text-left px-4 py-3 font-medium text-gray-600 w-16">Gambar</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Nama Reward</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Kategori</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Harga (Poin)</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Stok</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
@@ -152,8 +188,7 @@ export default function AdminRewards() {
                 {isLoading ? (
                   <tr>
                     <td colSpan={7} className="text-center py-8 text-gray-400">
-                      <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
-                      Memuat reward...
+                      <Loader2 className="w-5 h-5 animate-spin inline mr-2" /> Memuat reward...
                     </td>
                   </tr>
                 ) : rewards.length === 0 ? (
@@ -163,8 +198,23 @@ export default function AdminRewards() {
                 ) : (
                   rewards.map((reward) => (
                     <tr key={reward.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      {/* Gambar */}
+                      <td className="px-4 py-3">
+                        <div className="w-10 h-10 rounded-md overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+                          {reward.imageUrl ? (
+                            <img
+                              src={reward.imageUrl}
+                              alt={reward.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <ImagePlus className="w-4 h-4 text-gray-300" />
+                            </div>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 font-medium text-gray-800">{reward.name}</td>
-                      <td className="px-4 py-3 text-gray-600 capitalize">{reward.category || "-"}</td>
                       <td className="px-4 py-3 text-gray-600">{reward.pointsCost.toLocaleString("id-ID")}</td>
                       <td className="px-4 py-3">
                         <span className={reward.stockQuantity === 0 ? "text-red-500 font-medium" : "text-gray-600"}>
@@ -178,7 +228,7 @@ export default function AdminRewards() {
                           className="flex items-center gap-1.5 text-xs"
                         >
                           {togglingId === reward.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                            <><Loader2 className="w-4 h-4 animate-spin text-gray-400" /><span className="text-gray-400">Memproses</span></>
                           ) : reward.isActive ? (
                             <>
                               <ToggleRight className="w-5 h-5 text-[#006e2f]" />
@@ -237,7 +287,7 @@ export default function AdminRewards() {
         </CardContent>
       </Card>
 
-      {/* Modal tambah / edit */}
+      {/* Modal tambah */}
       {modal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-sm shadow-lg max-h-[90vh] overflow-y-auto">
@@ -251,6 +301,53 @@ export default function AdminRewards() {
             </div>
 
             <div className="px-5 py-4 space-y-4">
+              {/* Upload gambar */}
+              <div>
+                <label className="text-xs font-medium text-gray-700 block mb-1.5">
+                  Gambar Reward
+                </label>
+
+                {form.imagePreview ? (
+                  /* Preview gambar yang sudah dipilih */
+                  <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
+                    <img
+                      src={form.imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white rounded-full p-1 transition-colors"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  /* Area upload */
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-32 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2 hover:border-[#006e2f] hover:bg-green-50 transition-colors group"
+                  >
+                    <ImagePlus className="w-6 h-6 text-gray-400 group-hover:text-[#006e2f]" />
+                    <span className="text-xs text-gray-500 group-hover:text-[#006e2f]">
+                      Klik untuk upload gambar
+                    </span>
+                    <span className="text-xs text-gray-400">PNG, JPG, WEBP · Maks 2MB</span>
+                  </button>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+                {errors.image && <p className="text-xs text-red-500 mt-1">{errors.image}</p>}
+              </div>
+
               {/* Nama */}
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">Nama Reward</label>
@@ -267,21 +364,18 @@ export default function AdminRewards() {
                 {errors.name && <p className="text-xs text-red-500 mt-0.5">{errors.name}</p>}
               </div>
 
-              {/* Kategori */}
               <div>
                 <label className="text-xs font-medium text-gray-700 block mb-1">Kategori</label>
-                <select
+                <input
+                  type="text"
                   value={form.category}
                   onChange={(e) => {
                     setForm((f) => ({ ...f, category: e.target.value }));
                     setErrors((er) => ({ ...er, category: undefined }));
                   }}
+                  placeholder="kesehatan"
                   className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#006e2f]"
-                >
-                  <option value="kesehatan">Kesehatan</option>
-                  <option value="makanan">Makanan</option>
-                  <option value="gym">Gym</option>
-                </select>
+                />
                 {errors.category && <p className="text-xs text-red-500 mt-0.5">{errors.category}</p>}
               </div>
 
