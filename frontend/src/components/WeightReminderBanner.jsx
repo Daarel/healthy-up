@@ -1,4 +1,3 @@
-import { Scale, ChevronRight, X } from "lucide-react";
 
 /**
  * Banner pengingat input berat badan harian.

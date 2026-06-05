@@ -1,31 +1,48 @@
 import { useState, useEffect } from "react";
 import {
-  X,
-  Target,
-  ArrowRight,
-  ArrowLeft,
-  Sparkle,
-  CheckCircle2,
-  Droplets,
+  Brain,
+  Dumbbell,
+  UtensilsCrossed,
   Apple,
   Footprints,
   Moon,
-  UtensilsCrossed,
-  Star,
+  Droplets,
+  Activity,
+  Flame,
+  Heart,
+  Wind,
+  Bike,
+  Salad,
   User,
   UserCircle2,
-  Minus,
-  Plus,
 } from "lucide-react";
 
-// Tugas harian yang "di-generate AI"
-const AI_DAILY_TASKS = [
-  { id: 1, title: "Minum air 8 gelas",   category: "Hidrasi",   points: 10, Icon: Droplets,        iconColor: "text-blue-500"   },
-  { id: 2, title: "Makan sayur 3 porsi", category: "Nutrisi",   points: 15, Icon: Apple,           iconColor: "text-green-600"  },
-  { id: 3, title: "Jalan kaki 30 menit", category: "Olahraga",  points: 20, Icon: Footprints,      iconColor: "text-orange-500" },
-  { id: 4, title: "Tidur 8 jam",         category: "Istirahat", points: 10, Icon: Moon,            iconColor: "text-purple-500" },
-  { id: 5, title: "Sarapan bergizi",     category: "Nutrisi",   points: 15, Icon: UtensilsCrossed, iconColor: "text-yellow-600" },
-];
+const ICON_MAP = {
+  brain: Brain,
+  "biceps-flexed": Dumbbell,
+  dumbbell: Dumbbell,
+  utensils: UtensilsCrossed,
+  apple: Apple,
+  footprints: Footprints,
+  moon: Moon,
+  droplets: Droplets,
+  activity: Activity,
+  flame: Flame,
+  heart: Heart,
+  wind: Wind,
+  bike: Bike,
+  salad: Salad,
+};
+
+const CATEGORY_COLOR = {
+  physical:  "text-orange-500",
+  mental:    "text-purple-500",
+  nutrition: "text-green-600",
+};
+
+function getIcon(iconName, category) {
+  return ICON_MAP[iconName?.toLowerCase()] ?? ICON_MAP[category] ?? Activity;
+}
 
 const AI_TYPING_LINES = [
   "Menganalisis data kesehatanmu...",
@@ -38,17 +55,17 @@ const AI_TYPING_LINES = [
 /**
  * Modal 5 langkah:
  *  1. personal   — data pribadi (gender, usia, tinggi, berat)
- *  2. bmi        — tampil BMI placeholder + gauge
+ *  2. bmi        — tampil BMI + gauge
  *  3. target     — slider target berat badan
- *  4. generating — animasi AI
- *  5. preview    — preview tugas → konfirmasi
+ *  4. generating — loading AI (real API call)
+ *  5. preview    — misi real dari database
  *
  * Props:
  *  - isOpen        {boolean}
  *  - onClose       {fn}
- *  - initialWeight {number}  berat dari localStorage (0 jika belum ada)
- *  - initialTarget {number}  target dari localStorage (0 jika belum ada)
- *  - onConfirm     {fn({ gender, age, height, currentWeight, targetWeight, tasks })}
+ *  - initialWeight {number}
+ *  - initialTarget {number}
+ *  - onConfirm     {fn({ gender, age, height, currentWeight, targetWeight, tasks })} → returns tasks[]
  */
 export default function SetupTargetModal({
   isOpen,
@@ -59,7 +76,8 @@ export default function SetupTargetModal({
 }) {
   // ── Step state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState("personal");
-  const [realTasks, setRealTasks] = useState(AI_DAILY_TASKS);
+  const [realTasks, setRealTasks] = useState([]);
+  const [generateError, setGenerateError] = useState("");
 
   // ── Step 1: personal ────────────────────────────────────────────────────
   const [gender, setGender] = useState("");
@@ -74,8 +92,9 @@ export default function SetupTargetModal({
 
   // ── Step 4: generating ──────────────────────────────────────────────────
   const [typingIndex, setTypingIndex] = useState(0);
+  const [apiDone, setApiDone] = useState(false);
 
-  // Reset setiap kali modal dibuka (menggunakan render-phase update sesuai anjuran React)
+  // Reset setiap kali modal dibuka
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
@@ -84,10 +103,13 @@ export default function SetupTargetModal({
       setWeight(initialWeight || 70);
       setTargetWeight(initialTarget || Math.max(30, (initialWeight || 70) - 5));
       setTypingIndex(0);
+      setApiDone(false);
+      setRealTasks([]);
+      setGenerateError("");
     }
   }
 
-  // Saat weight berubah di step personal, sesuaikan target (render-phase update)
+  // Sesuaikan target saat berat berubah
   const [prevWeight, setPrevWeight] = useState(weight);
   if (weight !== prevWeight) {
     setPrevWeight(weight);
@@ -96,17 +118,21 @@ export default function SetupTargetModal({
     }
   }
 
-  // Animasi AI typing
+  // Animasi AI typing — terus berjalan sampai semua baris tampil,
+  // tapi hanya pindah ke preview kalau API juga sudah selesai
   useEffect(() => {
     if (step !== "generating") return;
+
     if (typingIndex < AI_TYPING_LINES.length - 1) {
-      const t = setTimeout(() => setTypingIndex((i) => i + 1), 650);
-      return () => clearTimeout(t);
-    } else {
-      const t = setTimeout(() => setStep("preview"), 800);
+      const t = setTimeout(() => setTypingIndex((i) => i + 1), 700);
       return () => clearTimeout(t);
     }
-  }, [typingIndex, step]);
+    // semua baris sudah ditampilkan, tunggu API
+    if (apiDone && !generateError) {
+      const t = setTimeout(() => setStep("preview"), 600);
+      return () => clearTimeout(t);
+    }
+  }, [typingIndex, step, apiDone, generateError]);
 
   if (!isOpen) return null;
 
@@ -115,51 +141,45 @@ export default function SetupTargetModal({
   const isLose     = targetWeight < weight;
   const isGain     = targetWeight > weight;
 
+  // ── BMI ─────────────────────────────────────────────────────────────────
+  const heightM = height / 100;
+  const calculatedBmi = heightM > 0 ? (weight / (heightM * heightM)).toFixed(2) : 0;
+  const numBmi = parseFloat(calculatedBmi);
+  let bmiCategory = "", bmiColorClass = "", gaugePosition = 0;
+  if (numBmi < 18.5) {
+    bmiCategory = "Kurus (Underweight)"; bmiColorClass = "text-blue-500";
+    gaugePosition = Math.min(18, Math.max(0, ((numBmi - 10) / 8.5) * 18));
+  } else if (numBmi < 25) {
+    bmiCategory = "Normal"; bmiColorClass = "text-green-500";
+    gaugePosition = 18 + ((numBmi - 18.5) / 6.5) * 25;
+  } else if (numBmi < 30) {
+    bmiCategory = "Berat Berlebih (Overweight)"; bmiColorClass = "text-yellow-500";
+    gaugePosition = 43 + ((numBmi - 25) / 5) * 17;
+  } else {
+    bmiCategory = "Obesitas"; bmiColorClass = "text-red-500";
+    gaugePosition = 60 + Math.min(40, ((numBmi - 30) / 15) * 40);
+  }
+
+  // ── Confirm & generate ──────────────────────────────────────────────────
   const handleConfirm = async () => {
     setTypingIndex(0);
+    setApiDone(false);
+    setGenerateError("");
     setStep("generating");
-    const confirmData = { gender, age, height, currentWeight: weight, targetWeight, tasks: AI_DAILY_TASKS };
+
     try {
+      const confirmData = { gender, age, height, currentWeight: weight, targetWeight, tasks: [] };
       const generatedTasks = await onConfirm(confirmData);
       if (generatedTasks && generatedTasks.length > 0) {
         setRealTasks(generatedTasks);
       }
     } catch (error) {
       console.error(error);
+      setGenerateError(error?.message || "Generate tugas gagal. Silakan coba lagi.");
+    } finally {
+      setApiDone(true);
     }
   };
-
-  // ── KALKULASI BMI MANUAL ────────────────────────────────────────────────
-  // Rumus BMI: Berat (kg) / (Tinggi (m) * Tinggi (m))
-  const heightInMeters = height / 100;
-  const calculatedBmi = heightInMeters > 0 ? (weight / (heightInMeters * heightInMeters)).toFixed(2) : 0;
-  
-  let bmiCategory = "";
-  let bmiColorClass = "";
-  let gaugePosition = 0;
-
-  const numBmi = parseFloat(calculatedBmi);
-  if (numBmi < 18.5) {
-    bmiCategory = "Kurus (Underweight)";
-    bmiColorClass = "text-blue-500";
-    gaugePosition = Math.min(18, Math.max(0, ((numBmi - 10) / 8.5) * 18));
-  } else if (numBmi >= 18.5 && numBmi < 25) {
-    bmiCategory = "Normal";
-    bmiColorClass = "text-green-500";
-    gaugePosition = 18 + ((numBmi - 18.5) / 6.5) * 25;
-  } else if (numBmi >= 25 && numBmi < 30) {
-    bmiCategory = "Berat Berlebih (Overweight)";
-    bmiColorClass = "text-yellow-500";
-    gaugePosition = 43 + ((numBmi - 25) / 5) * 17;
-  } else {
-    bmiCategory = "Obesitas";
-    bmiColorClass = "text-red-500";
-    gaugePosition = 60 + Math.min(40, ((numBmi - 30) / 15) * 40);
-  }
-
-  // ── Progress dots ────────────────────────────────────────────────────────
-  const STEPS = ["personal", "bmi", "target", "generating", "preview"];
-  const stepIdx = STEPS.indexOf(step);
 
   return (
     <div
@@ -290,47 +310,31 @@ export default function SetupTargetModal({
             </div>
 
             <div className="p-6 space-y-5">
-              {/* Progress dots */}
               <div className="flex items-center justify-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#006e2f]" />
                 <div className="w-8 h-2 rounded-full bg-[#006e2f]" />
                 <div className="w-2 h-2 rounded-full bg-[#e5eeff]" />
               </div>
 
-              {/* BMI placeholder */}
               <div className="bg-[#f8f9ff] rounded-2xl p-5 border border-[#e5eeff]">
                 <p className="text-xs text-[#6d7b6c] font-jakarta text-center mb-3">BMI Score</p>
-                {/* BMI Hasil Kalkulasi */}
                 <div className="flex flex-col items-center mb-6">
-                  <span className={`text-4xl font-bold font-lexend ${bmiColorClass}`}>
-                    {calculatedBmi}
-                  </span>
-                  <span className={`text-sm font-semibold font-jakarta mt-1 ${bmiColorClass}`}>
-                    {bmiCategory}
-                  </span>
+                  <span className={`text-4xl font-bold font-lexend ${bmiColorClass}`}>{calculatedBmi}</span>
+                  <span className={`text-sm font-semibold font-jakarta mt-1 ${bmiColorClass}`}>{bmiCategory}</span>
                 </div>
-
-                {/* Gauge */}
                 <div className="relative h-3 bg-gray-200 rounded-full overflow-hidden mb-2">
                   <div className="absolute left-0 top-0 h-full w-[18%] bg-blue-400 rounded-l-full" />
                   <div className="absolute left-[18%] top-0 h-full w-[25%] bg-green-500" />
                   <div className="absolute left-[43%] top-0 h-full w-[17%] bg-yellow-400" />
                   <div className="absolute left-[60%] top-0 h-full w-[40%] bg-red-500 rounded-r-full" />
-                  {/* Dot */}
-                  <div 
-                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-[3px rounded-full shadow-md transition-all duration-700 ease-out z-10"
-                    style={{ left: `calc(${gaugePosition}% - 8px)` }} 
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white border-[3px] border-gray-600 rounded-full shadow-md transition-all duration-700 ease-out z-10"
+                    style={{ left: `calc(${gaugePosition}% - 8px)` }}
                   />
                 </div>
                 <div className="flex justify-between text-[10px] text-[#6d7b6c] font-jakarta">
-                  <span>Kurus</span>
-                  <span>Normal</span>
-                  <span>Berlebihan</span>
-                  <span>Obesitas</span>
+                  <span>Kurus</span><span>Normal</span><span>Berlebihan</span><span>Obesitas</span>
                 </div>
-                <p className="text-xs text-center text-[#6d7b6c] font-jakarta mt-3">
-                  Skor BMI lengkap tersedia setelah akun dibuat.
-                </p>
               </div>
 
               <div className="flex gap-3">
@@ -368,25 +372,20 @@ export default function SetupTargetModal({
             </div>
 
             <div className="p-6 space-y-5">
-              {/* Progress dots */}
               <div className="flex items-center justify-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-[#006e2f]" />
                 <div className="w-2 h-2 rounded-full bg-[#006e2f]" />
                 <div className="w-8 h-2 rounded-full bg-[#006e2f]" />
               </div>
 
-              {/* Angka target */}
               <div className="text-center">
                 <p className="text-xs text-[#6d7b6c] font-jakarta mb-1">Target Berat</p>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-5xl font-bold text-[#006e2f] font-lexend">
-                    {targetWeight.toFixed(1)}
-                  </span>
+                  <span className="text-5xl font-bold text-[#006e2f] font-lexend">{targetWeight.toFixed(1)}</span>
                   <span className="text-lg text-[#6d7b6c] font-jakarta">kg</span>
                 </div>
               </div>
 
-              {/* Slider */}
               <div className="px-1">
                 <input type="range" min="30" max={weightMax} step="0.5"
                   value={targetWeight}
@@ -394,12 +393,10 @@ export default function SetupTargetModal({
                   aria-label="Target berat badan"
                   className="w-full h-2 bg-[#e5eeff] rounded-full appearance-none cursor-pointer accent-[#006e2f]" />
                 <div className="flex justify-between text-xs text-[#6d7b6c] mt-1.5 font-jakarta">
-                  <span>30 kg</span>
-                  <span>{weight} kg</span>
+                  <span>30 kg</span><span>{weight} kg</span>
                 </div>
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-3 gap-2">
                 <div className="bg-[#f8f9ff] rounded-2xl p-3 text-center border border-[#e5eeff]">
                   <p className="text-[10px] text-[#6d7b6c] font-jakarta mb-1">Saat Ini</p>
@@ -411,9 +408,9 @@ export default function SetupTargetModal({
                 </div>
                 <div className="bg-[#f8f9ff] rounded-2xl p-3 text-center border border-[#e5eeff]">
                   <p className="text-[10px] text-[#6d7b6c] font-jakarta mb-1">Perlu</p>
-                  <p className={`text-base font-bold font-lexend ${
-                    isLose ? "text-blue-500" : isGain ? "text-orange-500" : "text-[#191c20]"
-                  }`}>{diff} kg</p>
+                  <p className={`text-base font-bold font-lexend ${isLose ? "text-blue-500" : isGain ? "text-orange-500" : "text-[#191c20]"}`}>
+                    {diff} kg
+                  </p>
                 </div>
               </div>
 
@@ -422,9 +419,9 @@ export default function SetupTargetModal({
                   className="flex items-center justify-center w-11 h-11 border-2 border-[#c1c9bf] text-[#6d7b6c] rounded-xl hover:bg-[#f8f9ff] transition-colors flex-shrink-0">
                   <ArrowLeft className="w-4 h-4" />
                 </button>
-                <button type="button"
-                  onClick={handleConfirm}
-                  className="flex-1 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005425] transition-colors flex items-center justify-center gap-2">
+                <button type="button" onClick={handleConfirm}
+                  disabled={!apiDone && step === 'generating'}
+                  className="flex-1 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005425] transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                   <Sparkle className="w-4 h-4" />
                   Generate Tugas dengan AI
                 </button>
@@ -433,7 +430,7 @@ export default function SetupTargetModal({
           </>
         )}
 
-        {/* ── STEP 4: GENERATING ── */}
+        {/* ── STEP 4: GENERATING (real loading) ── */}
         {step === "generating" && (
           <div className="p-8 flex flex-col items-center gap-8">
             <div className="relative w-24 h-24">
@@ -450,25 +447,36 @@ export default function SetupTargetModal({
               <h2 className="text-xl font-bold text-[#191c20] font-lexend mb-5">
                 AI sedang menyusun rencanamu
               </h2>
-              <div className="space-y-3" aria-live="polite">
-                {AI_TYPING_LINES.slice(0, typingIndex + 1).map((line, i) => (
-                  <div key={i} className={`flex items-center justify-center gap-2 transition-opacity duration-300 ${
-                    i < typingIndex ? "opacity-40" : "opacity-100"
-                  }`}>
-                    <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${
-                      i < typingIndex ? "text-[#006e2f]" : "text-[#c1c9bf] animate-pulse"
-                    }`} />
-                    <span className={`text-sm font-lexend ${
-                      i < typingIndex ? "text-[#6d7b6c]" : "text-[#191c20]"
-                    }`}>{line}</span>
-                  </div>
-                ))}
-              </div>
+              {generateError ? (
+                <p className="text-sm text-red-500 font-jakarta">{generateError}</p>
+              ) : (
+                <div className="space-y-3" aria-live="polite">
+                  {AI_TYPING_LINES.slice(0, typingIndex + 1).map((line, i) => (
+                    <div key={i} className={`flex items-center justify-center gap-2 transition-opacity duration-300 ${
+                      i < typingIndex ? "opacity-40" : "opacity-100"
+                    }`}>
+                      <CheckCircle2 className={`w-4 h-4 flex-shrink-0 ${
+                        i < typingIndex ? "text-[#006e2f]" : "text-[#c1c9bf] animate-pulse"
+                      }`} />
+                      <span className={`text-sm font-lexend ${i < typingIndex ? "text-[#6d7b6c]" : "text-[#191c20]"}`}>
+                        {line}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+            {/* Tombol retry jika error */}
+            {generateError && (
+              <button type="button" onClick={handleConfirm}
+                className="px-6 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005425] transition-colors">
+                Coba Lagi
+              </button>
+            )}
           </div>
         )}
 
-        {/* ── STEP 5: PREVIEW ── */}
+        {/* ── STEP 5: PREVIEW (misi real dari API) ── */}
         {step === "preview" && (
           <>
             <div className="flex items-center justify-between p-6 border-b border-[#e5eeff]">
@@ -486,31 +494,39 @@ export default function SetupTargetModal({
               </button>
             </div>
 
-            {/* Daftar tugas */}
+            {/* Daftar tugas real */}
             <div className="px-6 pt-5 pb-2">
               <p className="text-xs font-semibold text-[#6d7b6c] font-jakarta mb-2 uppercase tracking-wide">
                 Tugas Minggu Ini
               </p>
               <div className="bg-[#f8f9ff] rounded-2xl border border-[#e5eeff] overflow-hidden">
-                {realTasks.map((task, i) => {
-                  const Icon = task.Icon || Sparkle;
-                  const iconColor = task.iconColor || "text-[#006e2f]";
-                  return (
-                  <div key={task.id} className={`flex items-center gap-3 px-4 py-3 ${
-                    i < realTasks.length - 1 ? "border-b border-[#e5eeff]" : ""
-                  }`}>
-                    <Icon className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#191c20] font-jakarta truncate">{task.title}</p>
-                      <p className="text-xs text-[#6d7b6c] font-jakarta">{task.category}</p>
-                    </div>
-                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full flex-shrink-0">
-                      <Star className="w-3 h-3 text-yellow-500" />
-                      <span className="text-xs font-semibold text-yellow-700 font-lexend">+{task.pointsReward || task.points || 0}</span>
-                    </div>
-                  </div>
-                  );
-                })}
+                {realTasks.length === 0 ? (
+                  <p className="text-sm text-[#6d7b6c] font-jakarta text-center py-6">
+                    Tidak ada tugas yang ditampilkan.
+                  </p>
+                ) : (
+                  realTasks.map((task, i) => {
+                    const IconComp = getIcon(task.icon, task.category);
+                    const iconColor = CATEGORY_COLOR[task.category] ?? "text-[#006e2f]";
+                    return (
+                      <div key={task.id} className={`flex items-center gap-3 px-4 py-3 ${
+                        i < realTasks.length - 1 ? "border-b border-[#e5eeff]" : ""
+                      }`}>
+                        <IconComp className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#191c20] font-jakarta truncate">{task.title}</p>
+                          <p className="text-xs text-[#6d7b6c] font-jakarta capitalize">{task.category}</p>
+                        </div>
+                        <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full flex-shrink-0">
+                          <Star className="w-3 h-3 text-yellow-500" />
+                          <span className="text-xs font-semibold text-yellow-700 font-lexend">
+                            +{task.pointsReward || task.points || 0}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 

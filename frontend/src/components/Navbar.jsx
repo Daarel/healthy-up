@@ -1,6 +1,4 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { Home, ClipboardList, Trophy, UserCircle, LogOut } from "lucide-react";
-import Logo from "./ui/logo";
 import { authApi } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 

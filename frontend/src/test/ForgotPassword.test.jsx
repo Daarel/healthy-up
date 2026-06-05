@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import ForgotPassword from '../pages/ForgotPassword';
 import { authApi } from '../lib/api';
 
 vi.mock('../lib/api', () => ({

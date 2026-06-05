@@ -1,18 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import {
-  Star,
-  BadgeCheck,
-  Gift,
-  CheckCircle2,
-  X,
-  Copy,
-  Check,
-  PartyPopper,
-  SlidersHorizontal,
-  History,
-} from 'lucide-react';
-import Navbar from '../components/Navbar';
-import Streak from '../components/ui/streak';
+
+
 import { mapReward, mapUserReward } from '../features/rewards/rewardMappers';
 import { rewardApi, userApi } from '../lib/api';
 

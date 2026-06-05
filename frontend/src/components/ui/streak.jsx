@@ -1,4 +1,3 @@
-import { Flame } from "lucide-react";
 
 /**
  * Komponen streak harian.

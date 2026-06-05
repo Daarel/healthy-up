@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import LinkTerkirim from '../pages/LinkTerkirim';
 
 const renderPage = (email = null) => {
   if (email) sessionStorage.setItem('reset_email', email);

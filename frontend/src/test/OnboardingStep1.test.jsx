@@ -1,7 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import OnboardingStep1 from '../pages/OnboardingStep1';
 import * as AuthContextModule from '../context/AuthContext';
 
 vi.mock('../lib/useNavigateWithTransition', () => ({

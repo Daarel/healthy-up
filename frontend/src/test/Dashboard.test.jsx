@@ -1,7 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import Dashboard from '../pages/Dashboard';
 import * as AuthContextModule from '../context/AuthContext';
 
 // Mock ui/logo and ui/streak to avoid import issues

@@ -1,18 +1,10 @@
 import { useState, useEffect } from "react";
 import {
-  X,
-  Sparkle,
-  CheckCircle2,
   Droplets,
   Apple,
   Footprints,
   Moon,
-  Dumbbell,
   UtensilsCrossed,
-  Flame,
-  Clock,
-  Star,
-  RefreshCw,
 } from "lucide-react";
 
 // ─── Data tugas yang "di-generate AI" ────────────────────────────────────────

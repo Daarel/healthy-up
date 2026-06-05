@@ -1,7 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import PrivateRoute from '../components/PrivateRoute';
 import * as AuthContextModule from '../context/AuthContext';
 
 // Helper: render PrivateRoute dengan mock AuthContext

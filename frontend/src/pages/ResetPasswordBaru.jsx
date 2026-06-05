@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, KeyRound, CheckCircle2, Loader2 } from "lucide-react";
-import Logo from "../components/ui/logo";
 import { authApi } from "../lib/api";
 
 const RULES = [

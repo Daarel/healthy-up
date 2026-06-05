@@ -1,10 +1,3 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import AdminLayout from "./pages/AdminLayout";
-import AdminLogin from "./pages/AdminLogin";
-import AdminUsers from "./pages/AdminUsers";
-import AdminUserDetail from "./pages/AdminUserDetail";
-import AdminMissions from "./pages/AdminMissions";
-import AdminRewards from "./pages/AdminRewards";
 
 function App() {
   return (

@@ -1,7 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import WeightCard from '../components/WeightCard';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 
 // WeightCard uses useNavigate, so wrap in MemoryRouter
 const renderWeightCard = (overrides = {}) => {

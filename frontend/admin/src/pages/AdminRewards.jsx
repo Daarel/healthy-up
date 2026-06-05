@@ -1,7 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2, Loader2, ToggleLeft, ToggleRight, X, ImagePlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { adminApi } from "@/lib/api";
 
 const EMPTY_FORM = {
@@ -128,10 +125,7 @@ export default function AdminRewards() {
     try {
       const res = await adminApi.toggleReward(id);
       const updatedReward = res.data.reward;
-      setRewards((prev) => updatedReward.isActive
-        ? prev.map((r) => (r.id === id ? updatedReward : r))
-        : prev.filter((r) => r.id !== id)
-      );
+      setRewards((prev) => prev.map((r) => (r.id === id ? updatedReward : r)));
     } catch (err) {
       setError(err.message || "Gagal mengubah status reward.");
     } finally {

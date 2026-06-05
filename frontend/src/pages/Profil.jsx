@@ -1,24 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  Edit2,
-  Star,
-  ChevronRight,
-  User,
-  Trash2,
-  Flame as FireIcon,
-  LogOut,
-  Plus,
-  TrendingDown,
-  TrendingUp,
-  Minus,
-  CheckCircle2,
-  Upload,
-  X,
-} from 'lucide-react';
-import Navbar from '../components/Navbar';
-import WeightInputModal from '../components/WeightInputModal';
-import Streak from '../components/ui/streak';
+
+
 import { authApi, userApi, healthApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -399,7 +382,7 @@ export default function Profile() {
                 </div>
                 <button
                   type='button'
-                  onClick={handleUpdatePicture}
+                  onClick={() => setShowPictureModal(true)}
                   disabled={isUpdatingPicture}
                   aria-label='Edit foto profil'
                   className='absolute -bottom-2 -right-2 w-8 h-8 bg-[#006e2f] text-white rounded-lg flex items-center justify-center hover:bg-[#005823] transition-colors disabled:opacity-60'
@@ -460,7 +443,7 @@ export default function Profile() {
           <div className='bg-white rounded-3xl p-5 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff] mb-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4'>
             <div>
               <p className='font-semibold text-[#191c20] font-lexend'>
-                Catat Berat Badan Minggu Ini
+                Catat Berat Badan Terbaru Anda
               </p>
               <p className='text-sm text-[#6d7b6c] font-jakarta'>
                 {latestEntry ? (

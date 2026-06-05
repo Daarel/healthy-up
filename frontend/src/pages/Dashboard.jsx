@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, Check, Star, Sparkle, Brain, Dumbbell, UtensilsCrossed, Apple, Footprints, Moon, Droplets, Activity, Flame, Heart, Wind, Bike, Salad } from "lucide-react";
-import Navbar from "../components/Navbar";
-import WeightCard from "../components/WeightCard";
-import WeightReminderBanner from "../components/WeightReminderBanner";
-import WeightInputModal from "../components/WeightInputModal";
-import SetupTargetModal from "../components/SetupTargetModal";
-import Streak from "../components/ui/streak";
+import { Brain, Dumbbell, UtensilsCrossed, Apple, Footprints, Moon, Droplets, Activity, Flame, Heart, Wind, Bike, Salad } from "lucide-react";
 import { healthApi, missionApi, userApi } from "../lib/api";
 
 const WEIGHT_STORAGE_KEY = "healthyup:weightLog";
@@ -219,6 +213,11 @@ export default function Dashboard() {
       await missionApi.generate();
     } catch (err) {
       console.dir(err);
+      // Jika error BUKAN karena misi sudah ada, lemparkan error ke modal
+      if (!err.message?.toLowerCase().includes('sudah membuat') && 
+          !err.message?.toLowerCase().includes('already')) {
+        throw err;
+      }
     }
 
     if (newWeight !== currentWeight) {
@@ -254,27 +253,9 @@ export default function Dashboard() {
       } else {
         throw new Error("No tasks generated");
       }
-    } catch {
-      // Fallback ke dummy AI_DAILY_TASKS
-      const fallbackTasks = newTasks.map((t) => ({
-        id: t.id, title: t.title, category: t.category,
-        icon: t.icon,
-        completed: false, claimed: false, points: t.points,
-      }));
-      setTasks(fallbackTasks);
-
-      try {
-        window.localStorage.setItem(WEIGHT_STORAGE_KEY, JSON.stringify({
-          currentWeight: newWeight, previousWeight: currentWeight,
-          lastLoggedDate, targetWeight: newTarget,
-        }));
-        window.localStorage.setItem(SETUP_DONE_KEY, "true");
-        window.localStorage.removeItem("healthyup:newUser");
-      } catch (err){
-        console.error(err);
-      }
-      setSetupDone(true);
-      return fallbackTasks; // <-- RETURN FALLBACK HERE
+    } catch (err) {
+      console.error(err);
+      throw new Error("Gagal mengambil data tugas dari server.");
     }
   };
 
