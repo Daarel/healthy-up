@@ -1,0 +1,11 @@
+# Ignore artifacts:
+node_modules
+generated
+prisma
+coverage
+dist
+
+# Ignore specific files:
+package-lock.json
+prisma.config.mjs
+.env

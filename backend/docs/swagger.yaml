@@ -908,7 +908,7 @@ paths:
         '500':
           description: Terjadi kesalahan saat menghapus akun
 
-  /profile/picture:
+  /users/profile/picture:
     patch:
       summary: Memperbarui foto profil pengguna
       description: Mengubah URL foto profil pengguna. URL harus berupa tautan gambar yang valid.
@@ -1456,7 +1456,7 @@ paths:
           description: Katalog reward tidak ditemukan
         '500':
           description: Gagal mengubah status reward
-  /api/v1/missions/generate:
+  /missions/generate:
     post:
       tags:
         - Missions
@@ -1502,7 +1502,7 @@ paths:
         '502':
           description: Gagal terhubung ke AI (HuggingFace Space)
 
-  /api/v1/missions/progress/weekly:
+  /missions/progress/weekly:
     get:
       tags:
         - Missions
@@ -1542,7 +1542,7 @@ paths:
                           end:
                             type: string
                             format: date-time
-  /api/v1/missions:
+  /missions:
     get:
       tags:
         - Missions
@@ -1587,7 +1587,7 @@ paths:
                         items:
                           $ref: '#/components/schemas/Mission'
 
-  /api/v1/missions/{id}:
+  /missions/{id}:
     get:
       tags:
         - Missions
@@ -1626,7 +1626,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/missions/{id}/status:
+  /missions/{id}/status:
     patch:
       tags:
         - Missions
@@ -1690,7 +1690,7 @@ paths:
         '500':
           description: Gagal mengunggah file ke Cloudinary
 
-  /api/v1/missions/{id}/verify:
+  /missions/{id}/verify:
     patch:
       tags:
         - Missions
@@ -1756,14 +1756,22 @@ paths:
         '404':
           description: Misi tidak ditemukan
 
-  /api/v1/missions/admin/missions/pending:
+  /missions/admin/pending:
     get:
       tags:
         - Missions
-      summary: Get Pending Verifications (Admin Only)
-      description: Mengambil seluruh daftar misi dari semua pengguna yang berstatus `completed` namun `verificationStatus`-nya masih `pending`. Diurutkan berdasarkan yang paling lama menunggu (FIFO).
+      summary: Get All Verifications (Admin Only)
+      description: Mengambil seluruh daftar misi untuk verifikasi admin. Dapat difilter berdasarkan status (pending, approved, rejected, all).
       security:
         - bearerAuth: []
+      parameters:
+        - in: query
+          name: verificationStatus
+          schema:
+            type: string
+            enum: [pending, approved, rejected, all]
+            default: pending
+          description: Filter status verifikasi misi
       responses:
         '200':
           description: Berhasil mengambil antrean misi

@@ -294,12 +294,17 @@ class MissionService {
   static async getPendingVerifications(verificationStatus = 'pending') {
     const VALID_STATUSES = ['pending', 'approved', 'rejected'];
 
-    const whereClause = {
-      status: 'completed',
-    };
+    const whereClause = {};
 
-    // Filter by verificationStatus kecuali jika 'all'
-    if (verificationStatus !== 'all' && VALID_STATUSES.includes(verificationStatus)) {
+    if (verificationStatus === 'all') {
+      whereClause.OR = [
+        { status: 'completed' },
+        { verificationStatus: 'rejected' }
+      ];
+    } else if (verificationStatus === 'rejected') {
+      whereClause.verificationStatus = 'rejected';
+    } else if (VALID_STATUSES.includes(verificationStatus)) {
+      whereClause.status = 'completed';
       whereClause.verificationStatus = verificationStatus;
     }
 

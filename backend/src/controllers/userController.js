@@ -1,12 +1,11 @@
 import { z } from 'zod';
 
+import cloudinary from '../config/cloudinary.js';
 import {
   deleteUserByAdminSchema,
   getAllUsersSchema,
-  updateProfilePictureSchema,
 } from '../schemas/userSchema.js';
 import UserService from '../services/userService.js';
-import cloudinary from '../config/cloudinary.js';
 
 class UserController {
   /**
