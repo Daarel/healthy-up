@@ -90,4 +90,21 @@ export const adminApi = {
       body: JSON.stringify(payload),
     });
   },
+
+  getRewards: async (category) => {
+    const query = category && category !== "semua" ? `?category=${encodeURIComponent(category)}` : "";
+    return request(`/rewards${query}`);
+  },
+  createReward: async (payload) => {
+    return request("/rewards", {
+      method: "POST",
+      body: payload instanceof FormData ? payload : JSON.stringify(payload),
+    });
+  },
+  deleteReward: async (id) => {
+    return request(`/rewards/${id}`, { method: "DELETE" });
+  },
+  toggleReward: async (id) => {
+    return request(`/rewards/${id}/toggle`, { method: "PATCH" });
+  }
 };
