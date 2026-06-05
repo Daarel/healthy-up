@@ -7,7 +7,7 @@ import WeightReminderBanner from "../components/WeightReminderBanner";
 import WeightInputModal from "../components/WeightInputModal";
 import SetupTargetModal from "../components/SetupTargetModal";
 import Streak from "../components/ui/streak";
-import { healthApi, missionApi } from "../lib/api";
+import { healthApi, missionApi, userApi } from "../lib/api";
 
 const WEIGHT_STORAGE_KEY = "healthyup:weightLog";
 const SETUP_DONE_KEY     = "healthyup:setupDone";
@@ -84,14 +84,40 @@ export default function Dashboard() {
   const [previousWeight, setPreviousWeight] = useState(stored?.previousWeight ?? 0);
   const [lastLoggedDate, setLastLoggedDate] = useState(stored?.lastLoggedDate ?? null);
 
-  // ─── Stats state (TODO: fetch GET /api/users/me/stats saat backend siap) ────
+  // ─── Stats state ────
   const storedStats = readStats();
-  const [stats] = useState({
+  const [stats, setStats] = useState({
     caloriesBurned:  storedStats?.caloriesBurned  ?? 0,
     caloriesTarget:  storedStats?.caloriesTarget  ?? 1800,
     streakCount:     storedStats?.streakCount     ?? 0,
     username:        storedStats?.username        ?? "Pengguna",
   });
+
+  useEffect(() => {
+    userApi.getMe()
+      .then(res => {
+        const u = res.data?.user;
+        if (u) {
+          setStats(prev => ({
+            ...prev,
+            username: u.username,
+            streakCount: u.streakCount ?? 0,
+          }));
+        }
+      })
+      .catch(err => console.error("Gagal load user", err));
+
+    healthApi.getCalorieLogs()
+      .then(res => {
+        // backend returns: { status, data: { weeklyBurnedFromLog, dailyLogs } }
+        const dataKalori = res.data || {};
+        setStats(prev => ({
+          ...prev,
+          caloriesBurned: dataKalori.weeklyBurnedFromLog || 0,
+        }));
+      })
+      .catch(err => console.error("Gagal load kalori", err));
+  }, []);
 
   // ─── UI state ─────────────────────────────────────────────────────────────
   const [showWeightModal,   setShowWeightModal]   = useState(false);
@@ -344,7 +370,6 @@ export default function Dashboard() {
             <div className="bg-white rounded-3xl p-6 shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff]">
               <div className="flex items-center justify-between mb-1">
                 <h3 className="font-semibold text-[#191c20] font-lexend">Progress Minggu Ini</h3>
-                <MoreVertical className="w-5 h-5 text-[#6d7b6c]" />
               </div>
               <p className="text-xs text-[#6d7b6c] font-jakarta mb-4">Misi yang telah diverifikasi</p>
               <div className="flex items-center justify-center">

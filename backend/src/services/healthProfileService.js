@@ -29,49 +29,6 @@ class HealthProfileService {
   }
 
   static async getCalorieLog(userId) {
-    // const now = new Date();
-    // const startOfToday = new Date(
-    //   now.getFullYear(),
-    //   now.getMonth(),
-    //   now.getDate(),
-    // );
-
-    // const startOfWeek = new Date(startOfToday);
-    // startOfWeek.setDate(startOfWeek.getDate() - 7);
-
-    // const [weeklyLog, weeklyPhysicalMissions] = await Promise.all([
-    //   prisma.calorieLog.aggregate({
-    //     _sum: { calories: true },
-    //     where: {
-    //       userId,
-    //       loggedAt: { gte: startOfWeek },
-    //     },
-    //   }),
-
-    //   prisma.mission.aggregate({
-    //     _sum: { caloriesImpact: true },
-    //     where: {
-    //       userId,
-    //       category: 'physical',
-    //       status: 'completed',
-    //       completedAt: { gte: startOfWeek },
-    //     },
-    //   }),
-    // ]);
-
-    // const burnedFromLog = weeklyLog._sum.calories || 0;
-
-    // const burnedFromMissions = Math.abs(
-    //   weeklyPhysicalMissions._sum.caloriesImpact || 0,
-    // );
-
-    // return {
-    //   status: 'success',
-    //   data: {
-    //     weeklyBurnedFromLog: burnedFromLog,
-    //     weeklyBurnedFromMissions: burnedFromMissions,
-    //   },
-    // };
     const endDate = new Date();
     const startDate = new Date();
     
@@ -86,12 +43,27 @@ class HealthProfileService {
         loggedAt: { gte: startDate, lte: endDate },
       },
     });
+
+    const physicalMissions = await prisma.mission.findMany({
+      where: {
+        userId: userId,
+        category: 'physical',
+        status: 'completed',
+        completedAt: { gte: startDate, lte: endDate },
+      },
+    });
   
     const logMap = {};
     rawLogs.forEach((log) => {
       const dateString = log.loggedAt.toISOString().split('T')[0];
-    
       logMap[dateString] = (logMap[dateString] || 0) + log.calories;
+    });
+
+    physicalMissions.forEach((mission) => {
+      if (mission.completedAt && mission.caloriesImpact) {
+        const dateString = mission.completedAt.toISOString().split('T')[0];
+        logMap[dateString] = (logMap[dateString] || 0) + Math.abs(mission.caloriesImpact);
+      }
     });
 
     const filledLogs = [];

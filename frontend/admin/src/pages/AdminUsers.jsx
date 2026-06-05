@@ -5,7 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminApi } from "@/lib/api";
 
-const formatDate = (value) => value ? new Date(value).toLocaleDateString("id-ID") : "-";
+const formatDate = (value) => value ? new Date(value).toLocaleDateString("id-ID", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit"
+}) : "-";
 
 export default function AdminUsers() {
   const navigate = useNavigate();

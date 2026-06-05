@@ -131,16 +131,17 @@ export default function Profile() {
         const res = await healthApi.getCalorieLogs();
         if (ignore) return;
 
-        const dataKalori = res.data?.data || {};
+        // backend returns: { status, data: { weeklyBurnedFromLog, dailyLogs } }
+        const dataKalori = res.data || {};
 
         setCaloriesBurnedThisWeek(dataKalori.weeklyBurnedFromLog || 0);
-
         setCalorieDailyLogs(dataKalori.dailyLogs || []);
-        console.log('Data Kalori:', dataKalori.dailyLogs);
       } catch (err) {
         if (!ignore) console.error('Gagal memuat data kalori:', err);
       }
     };
+
+    loadCalorieLogs();
 
     loadProfile();
     return () => {

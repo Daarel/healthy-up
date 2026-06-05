@@ -200,11 +200,11 @@ class MissionService {
           data: { verificationStatus: 'approved' },
         });
 
-        if (mission.caloriesImpact > 0) {
+        if (mission.caloriesImpact && mission.caloriesImpact !== 0) {
           await tx.calorieLog.create({
             data: {
               userId: mission.userId,
-              calories: mission.caloriesImpact,
+              calories: Math.abs(mission.caloriesImpact),
             },
           });
         }

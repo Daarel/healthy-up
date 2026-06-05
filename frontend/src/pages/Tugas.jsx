@@ -1037,19 +1037,7 @@ export default function Tugas() {
                     </label>
                   </div>
 
-                  {/* Notes */}
-                  <div>
-                    <label className='block text-sm font-semibold text-[#191c20] mb-2 font-lexend'>
-                      Catatan (Opsional)
-                    </label>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder='Tambahkan catatan tentang tugas ini...'
-                      rows={3}
-                      className='w-full px-4 py-3 rounded-xl border border-[#c1c9bf] bg-white focus:outline-none focus:ring-2 focus:ring-[#006e2f] focus:border-transparent font-jakarta resize-none'
-                    />
-                  </div>
+
 
                   {/* Submit Error */}
                   {submitError && (

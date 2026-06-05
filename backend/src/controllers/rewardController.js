@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import cloudinary from '../config/cloudinary.js';
 import {
   claimRewardSchema,
   createRewardSchema,

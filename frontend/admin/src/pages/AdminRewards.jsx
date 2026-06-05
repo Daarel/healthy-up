@@ -102,14 +102,16 @@ export default function AdminRewards() {
     setIsSaving(true);
     setError("");
     try {
-      const res = await adminApi.createReward({
-        name: form.name.trim(),
-        category: form.category.trim().toLowerCase(),
-        pointsCost: Number(form.pointsCost),
-        stockQuantity: Number(form.stockQuantity),
-        isActive: form.isActive,
-        imageFile: form.imageFile,
-      });
+      const formData = new FormData();
+      formData.append("name", form.name.trim());
+      formData.append("category", form.category.trim().toLowerCase());
+      formData.append("pointsCost", Number(form.pointsCost));
+      formData.append("stockQuantity", Number(form.stockQuantity));
+      formData.append("isActive", form.isActive);
+      if (form.imageFile) {
+        formData.append("image", form.imageFile);
+      }
+      const res = await adminApi.createReward(formData);
       const newReward = res.data.reward;
       setRewards((prev) => newReward.isActive ? [newReward, ...prev] : prev);
       setModal(null);
@@ -242,7 +244,15 @@ export default function AdminRewards() {
                           )}
                         </button>
                       </td>
-                      <td className="px-4 py-3 text-gray-500">{reward.createdAt}</td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {new Date(reward.createdAt).toLocaleDateString("id-ID", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        })}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
                           {confirmDelete === reward.id ? (
