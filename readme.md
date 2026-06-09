@@ -25,8 +25,8 @@ Projek ini dikembangkan sebagai tugas **Capstone Project**, Coding Camp 2026 pow
 
 ## 🔗 Referensi & Tautan Penting
 
-* **Web Admin:** [HealthyUp Admin](https://vercel.com/ghifari-15s-projects/healthy-up-admin)
-* **Web User:** [HealthyUp App](https://healthy-up-frontend.vercel.app/tugas)
+* **Web Admin:** [HealthyUp Admin](https://healthy-up-admin.vercel.app/)
+* **Web User:** [HealthyUp App](https://healthy-up-frontend.vercel.app)
 * **Swagger API Documentation:** [API Docs](https://healthy-up-production.up.railway.app/api-docs)
 * **HuggingFace API (AI):** [Generate Quests API](https://dkarnnd-ai-healthyup.hf.space/api/generate_quests)
 * **HuggingFace Repository:** [dkarnnd/ai-healthyup](https://huggingface.co/spaces/dkarnnd/ai-healthyup/tree/main)
