@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌿 HealthyUp
+# HealthyUp
 
 **AI-Powered Gamified Health & Fitness Tracker**
 
@@ -63,46 +63,8 @@ Dibangun sebagai *Single Page Application* (SPA) dengan performa tinggi:
 ### Backend (Server-Side)
 Arsitektur RESTful API yang kokoh dan aman:
 * **Core:** Node.js & Express.js
-* **Database & ORM:** PostgreSQL & Prisma ORM (dengan `@prisma/adapter-pg`)
+* **Database & ORM:** PostgreSQL & Prisma ORM
 * **Data Validation:** Zod
 * **Media Storage:** Cloudinary (via Multer)
 * **Security & Auth:** JSON Web Tokens (JWT), bcryptjs, Helmet, CORS
 * **Email Service:** Nodemailer & Resend
-
----
-
-## 🚀 Cara Menjalankan Projek (Local Development)
-
-### 1. Prasyarat
-Pastikan Anda telah menginstal:
-* Node.js
-* PostgreSQL
-* Git
-
-### 2. Instalasi & Konfigurasi Lingkungan
-
-1. **Setup Environment Variables (.env)**
-   Anda perlu membuat dan mengisi file `.env` di masing-masing folder (`frontend`, `backend`, dan `frontend/admin`). Anda dapat menggunakan file `.env.example` yang tersedia di masing-masing direktori sebagai panduan (contoh) nilai apa saja yang dibutuhkan.
-
-2. **Instalasi Dependency (npm i)**
-   Instal semua paket yang diperlukan dengan menjalankan perintah `npm i` (atau `npm install`) pada ketiga direktori utama:
-   ```bash
-   # Terminal 1: Frontend
-   cd frontend
-   npm i
-
-   # Terminal 2: Admin Dashboard
-   cd frontend/admin
-   npm i
-
-   # Terminal 3: Backend
-   cd backend
-   npm i
-   ```
-
-3. **Generate Prisma Client (Backend)**
-   Khusus untuk folder `backend`, setelah melakukan `npm i`, Anda wajib menjalankan perintah berikut agar Prisma Client dapat di-generate sesuai dengan skema database Anda:
-   ```bash
-   cd backend
-   npx prisma generate
-   ```
