@@ -1,8 +1,10 @@
 import cors from 'cors';
 import express from 'express';
+import fs from 'fs';
 import helmet from 'helmet';
 import path from 'path';
 import swaggerUi from 'swagger-ui-express';
+import { fileURLToPath } from 'url';
 import yaml from 'yamljs';
 
 import authRoutes from './routes/authRoutes.js';
@@ -39,6 +41,9 @@ app.use('/api/v1/rewards', rewardRoutes);
 app.use('/api/v1/missions', missionRoutes);
 
 // documentation
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const swaggerOptions = {
   swaggerOptions: {
     supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
@@ -48,9 +53,24 @@ const swaggerOptions = {
   customSiteTitle: 'HealthyUp API Documentation',
 };
 
-const swaggerDocument = yaml.load(
-  path.join(process.cwd(), 'docs', 'swagger.yaml'),
-);
+const swaggerCandidates = [
+  path.resolve(__dirname, '../docs/swagger.yaml'),
+  path.resolve(process.cwd(), 'backend/docs/swagger.yaml'),
+  path.resolve(process.cwd(), 'docs/swagger.yaml'),
+];
+
+let swaggerDocument = {};
+for (const candidatePath of swaggerCandidates) {
+  try {
+    if (fs.existsSync(candidatePath)) {
+      const fileContent = fs.readFileSync(candidatePath, 'utf8');
+      swaggerDocument = yaml.parse(fileContent);
+      break;
+    }
+  } catch {
+    // continue to next candidate
+  }
+}
 
 app.get('/', (req, res) => {
   res.redirect('/api-docs');

@@ -7,9 +7,11 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon src/server.js",
     "start": "node src/server.js",
-    "prisma:generate": "npx prisma generate",
-    "prisma:push": "npx prisma db push",
-    "prisma:format": "npx prisma format",
+    "build": "prisma generate",
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate",
+    "prisma:push": "prisma db push",
+    "prisma:format": "prisma format",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write ."
@@ -33,6 +35,7 @@
     "multer": "^2.1.1",
     "nodemailer": "^8.0.7",
     "pg": "^8.20.0",
+    "prisma": "^7.8.0",
     "resend": "^6.12.4",
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0",
@@ -46,7 +49,6 @@
     "globals": "^17.6.0",
     "morgan": "^1.10.1",
     "nodemon": "^3.1.14",
-    "prettier": "^3.8.3",
-    "prisma": "^7.8.0"
+    "prettier": "^3.8.3"
   }
 }
