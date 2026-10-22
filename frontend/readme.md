@@ -66,10 +66,10 @@ http://localhost:5173
 Frontend mengambil alamat backend dari environment variable:
 
 ```env
-VITE_BASE_URL=http://localhost:5001/api/v1
+API_BASE_URL=http://localhost:5001/api/v1
 ```
 
-Jika `VITE_BASE_URL` tidak diisi, aplikasi akan memakai fallback:
+Jika `API_BASE_URL` tidak diisi, aplikasi akan memakai fallback:
 
 ```text
 http://localhost:5001/api/v1
@@ -80,7 +80,7 @@ Pastikan backend berjalan di alamat tersebut agar fitur login, register, profil,
 Contoh isi file `.env.example`:
 
 ```env
-VITE_BASE_URL=http://localhost:5001/api/v1
+API_BASE_URL=http://localhost:5001/api/v1
 ```
 
 Catatan: variable environment yang ingin dibaca oleh Vite harus diawali dengan `VITE_`.

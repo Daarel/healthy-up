@@ -1,14 +1,14 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { getToken } from "../lib/apiClient";
+import { getRoleFromToken, isTokenExpired } from "../lib/jwt";
 
-/**
- * Bungkus halaman yang butuh login.
- * - Selama cek sesi: tampilkan layar loading
- * - Belum login: redirect ke /login
- * - Sudah login: render halaman
- */
-export default function PrivateRoute({ children }) {
-  const { user, isLoading } = useAuth();
+export default function PrivateRoute({
+  children,
+  allowedRoles,
+  redirectTo = "/login",
+}) {
+  const { user, role, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -20,12 +20,16 @@ export default function PrivateRoute({ children }) {
             fill="none"
           >
             <circle
-              cx="25" cy="25" r="20"
+              cx="25"
+              cy="25"
+              r="20"
               stroke="#e5eeff"
               strokeWidth="5"
             />
             <circle
-              cx="25" cy="25" r="20"
+              cx="25"
+              cy="25"
+              r="20"
               stroke="#006e2f"
               strokeWidth="5"
               strokeLinecap="round"
@@ -38,9 +42,23 @@ export default function PrivateRoute({ children }) {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  const token = getToken();
+  const tokenExpired = token ? isTokenExpired(token) : false;
+
+  if (!user || tokenExpired) {
+    return <Navigate to={redirectTo} replace />;
   }
 
-  return children;
+  const effectiveRole = getRoleFromToken(token) || role || user?.role || "user";
+
+  if (
+    Array.isArray(allowedRoles) &&
+    allowedRoles.length > 0 &&
+    !allowedRoles.includes(effectiveRole)
+  ) {
+    const fallbackPath = effectiveRole === "admin" ? "/admin/users" : "/dashboard";
+    return <Navigate to={fallbackPath} replace />;
+  }
+
+  return children ? children : <Outlet />;
 }

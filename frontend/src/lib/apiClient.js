@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5001/api/v1";
+export const API_BASE_URL = import.meta.env.API_BASE_URL || "http://localhost:5001/api/v1";
 export const REQUEST_TIMEOUT_MS = 20000;
 export const TOKEN_KEY = "healthyup:token";
 
@@ -55,7 +55,7 @@ export async function request(path, options = {}) {
       ...options,
       signal: controller.signal,
       headers: {
-        "Content-Type": "application/json",
+        ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...options.headers,
       },
