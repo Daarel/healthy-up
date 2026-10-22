@@ -159,12 +159,20 @@ class HealthProfileController {
           'Berat badan berhasil dicatat dan profil kesehatan telah diperbarui!',
         data: {
           weightLog: newWeightLog,
-          currentWeight: updatedHealthProfile.weight,
+          currentWeight: updatedHealthProfile.weightKg,
         },
       });
     } catch (err) {
       if (err instanceof z.ZodError)
         return HealthProfileController.handleZodError(err, res);
+
+      if (err.message === 'WEIGHT_ALREADY_LOGGED_THIS_WEEK') {
+        return res.status(400).json({
+          status: 'error',
+          message:
+            'Berat badan sudah dicatat minggu ini. Pencatatan hanya dapat dilakukan 1 kali per minggu.',
+        });
+      }
 
       if (err.code === 'P2025') {
         return res.status(404).json({
