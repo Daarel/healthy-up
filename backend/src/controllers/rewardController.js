@@ -22,8 +22,9 @@ class RewardController {
     try {
       // Ambil nilai category dari URL query, misal: ?category=kesehatan
       const { category } = getRewardsQuerySchema.parse(req.query);
+      const isAdmin = req.user?.role === 'admin';
 
-      const rewards = await RewardService.getActiveRewards(category);
+      const rewards = await RewardService.getActiveRewards(category, isAdmin);
 
       return res.status(200).json({
         status: 'success',

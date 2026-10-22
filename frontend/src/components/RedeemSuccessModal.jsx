@@ -1,15 +1,5 @@
 import { Gift, CheckCircle2, PartyPopper, Copy, Check, X } from "lucide-react";
 
-/**
- * Modal yang muncul setelah penukaran voucher berhasil.
- *
- * Props:
- * - voucher      : objek voucher yang ditukarkan (title, image, category, points, code)
- * - remainingPts : sisa poin user setelah penukaran
- * - onClose      : fungsi untuk menutup modal
- * - codeCopied   : boolean apakah kode sudah disalin
- * - onCopy       : fungsi untuk menyalin kode voucher
- */
 export default function RedeemSuccessModal({
   voucher,
   remainingPts,
