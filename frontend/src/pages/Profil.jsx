@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
   Edit2,
@@ -6,6 +7,7 @@ import {
   ChevronRight,
   User,
   Trash2,
+  AlertTriangle,
   Flame as FireIcon,
   LogOut,
   Plus,
@@ -72,7 +74,7 @@ export default function Profile() {
   const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   const [caloriesBurnedThisWeek, setCaloriesBurnedThisWeek] = useState(0);
-  const [calorieDailyLogs, setCalorieDailyLogs] = useState([]);
+  const [_calorieDailyLogs, setCalorieDailyLogs] = useState([]);
 
   // ─── Weight log state (TODO: fetch GET /api/weight-logs) ──────────────────
   // Struktur tiap item: { id, date (ISO string), weight (number), note (string) }
@@ -84,7 +86,7 @@ export default function Profile() {
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isLevelingUp, setIsLevelingUp] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isUpdatingPicture, setIsUpdatingPicture] = useState(false);
   const [showPictureModal, setShowPictureModal] = useState(false);
   const [selectedPicture, setSelectedPicture] = useState(null);
@@ -195,6 +197,23 @@ export default function Profile() {
     ? +(currentWeight - prevEntry.weight).toFixed(1)
     : 0;
 
+  const isLoggedThisWeek = (() => {
+    if (!latestEntry?.date) return false;
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
+    const startOfWeek = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      diffToMonday,
+      0,
+      0,
+      0,
+      0,
+    );
+    return new Date(latestEntry.date) >= startOfWeek;
+  })();
+
   // ─── Chart helpers ────────────────────────────────────────────────────────
   const chartEntries =
     chartPeriod === 'mingguan' ? weightLog.slice(-7) : weightLog;
@@ -234,12 +253,7 @@ export default function Profile() {
     }
   };
 
-  const handleDeleteAccount = async () => {
-    const confirmed = window.confirm(
-      'Hapus akun dan seluruh data secara permanen?',
-    );
-    if (!confirmed) return;
-
+  const handleConfirmDelete = async () => {
     setIsDeleting(true);
     try {
       await userApi.deleteMe();
@@ -247,30 +261,9 @@ export default function Profile() {
       // Tetap keluarkan user karena token client sudah dibersihkan oleh API client.
     } finally {
       setIsDeleting(false);
+      setShowDeleteModal(false);
       setUser(null);
       navigate('/login');
-    }
-  };
-
-  const handleLevelUp = async () => {
-    setIsLevelingUp(true);
-    setProfileError('');
-
-    try {
-      const res = await userApi.levelUp();
-      const updatedUser = res.data.user;
-      setProfileUser((prev) => ({
-        ...prev,
-        name: updatedUser.username || prev.name,
-        level: updatedUser.level ?? prev.level,
-        title: titleCase(updatedUser.rankTitle || prev.title),
-        experiencePoints: updatedUser.experiencePoints ?? prev.experiencePoints,
-        badges: updatedUser.badges ?? prev.badges,
-      }));
-    } catch (err) {
-      setProfileError(err.message || 'Gagal memproses kenaikan level.');
-    } finally {
-      setIsLevelingUp(false);
     }
   };
 
@@ -328,37 +321,56 @@ export default function Profile() {
     }
   };
 
-  // TODO: ganti dengan POST /api/weight-logs, lalu update weightLog dari response
   const handleWeightSuccess = async (value, note) => {
     try {
       const payload = { weight: value };
 
-      const res = await healthApi.createWeightLog(payload);
+      await healthApi.createWeightLog(payload);
 
-      const newLog = res.data?.weightLog || {};
-      const today = newLog.loggedAt
-        ? new Date(newLog.loggedAt).toISOString().split('T')[0]
-        : new Date().toISOString().split('T')[0];
+      const range = chartPeriod === 'mingguan' ? 'week' : 'month';
+      const resLogs = await healthApi.getWeightLogs(range);
+      const rawLogs = resLogs.data?.weightLogs || [];
 
-      setWeightLog((prev) => [
-        ...prev,
-        {
-          id: newLog.id || Date.now(),
-          date: today,
-          weight: value,
-          note: note ?? '',
-        },
-      ]);
+      const fetchedLogs = rawLogs
+        .filter((log) => log.weight > 0)
+        .map((log) => ({
+          id: log.id || Math.random().toString(),
+          date: log.loggedAt || log.date,
+          weight: log.weight,
+          note: log.note || (log.id === resLogs.data?.weightLogs?.slice(-1)?.[0]?.id ? (note ?? '') : ''),
+        }));
+
+      setWeightLog(fetchedLogs);
+
+      try {
+        const now = new Date();
+        const jan1 = new Date(now.getFullYear(), 0, 1);
+        const week = Math.ceil(((now - jan1) / 86400000 + jan1.getDay() + 1) / 7);
+        const thisWeekKey = `${now.getFullYear()}-W${String(week).padStart(2, '0')}`;
+        const stored = JSON.parse(window.localStorage.getItem('healthyup:weightLog')) ?? {};
+        window.localStorage.setItem(
+          'healthyup:weightLog',
+          JSON.stringify({
+            ...stored,
+            currentWeight: value,
+            previousWeight: currentWeight || value,
+            lastLoggedDate: thisWeekKey,
+          }),
+        );
+      } catch {
+        // ignore storage error
+      }
 
       setShowWeightModal(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
       console.error('Gagal mencatat berat badan:', error);
-      alert(
+      setProfileError(
         error.message ||
           'Gagal mencatat berat badan ke server. Silakan coba lagi.',
       );
+      setShowWeightModal(false);
     }
   };
 
@@ -399,7 +411,7 @@ export default function Profile() {
                 </div>
                 <button
                   type='button'
-                  onClick={handleUpdatePicture}
+                  onClick={() => setShowPictureModal(true)}
                   disabled={isUpdatingPicture}
                   aria-label='Edit foto profil'
                   className='absolute -bottom-2 -right-2 w-8 h-8 bg-[#006e2f] text-white rounded-lg flex items-center justify-center hover:bg-[#005823] transition-colors disabled:opacity-60'
@@ -428,14 +440,6 @@ export default function Profile() {
                       Level {user.level} - {user.title}
                     </span>
                   </div>
-                  <button
-                    type='button'
-                    onClick={handleLevelUp}
-                    disabled={isLevelingUp}
-                    className='px-4 py-2 rounded-xl bg-[#006e2f] text-white text-sm font-semibold font-jakarta hover:bg-[#005823] transition-colors disabled:opacity-60'
-                  >
-                    {isLevelingUp ? 'Memproses...' : 'Naik Level'}
-                  </button>
                 </div>
               </div>
 
@@ -477,12 +481,26 @@ export default function Profile() {
               </p>
             </div>
             <button
-              onClick={() => setShowWeightModal(true)}
+              onClick={() => !isLoggedThisWeek && setShowWeightModal(true)}
+              disabled={isLoggedThisWeek}
               data-testid='btn-catat-berat'
-              className='flex items-center gap-2 px-5 py-3 bg-[#006e2f] text-white rounded-xl hover:bg-[#005823] transition-colors font-semibold font-jakarta whitespace-nowrap'
+              className={`flex items-center gap-2 px-5 py-3 rounded-xl transition-colors font-semibold font-jakarta whitespace-nowrap ${
+                isLoggedThisWeek
+                  ? 'bg-gray-100 text-[#6d7b6c] cursor-not-allowed'
+                  : 'bg-[#006e2f] text-white hover:bg-[#005823]'
+              }`}
             >
-              <Plus className='w-4 h-4' />
-              Tambah Berat
+              {isLoggedThisWeek ? (
+                <>
+                  <CheckCircle2 className='w-4 h-4 text-[#006e2f]' />
+                  Sudah Dicatat Minggu Ini
+                </>
+              ) : (
+                <>
+                  <Plus className='w-4 h-4' />
+                  Tambah Berat
+                </>
+              )}
             </button>
           </div>
 
@@ -680,18 +698,6 @@ export default function Profile() {
               Pengaturan Akun
             </h3>
             <div className='space-y-1'>
-              {/* Informasi Pribadi */}
-              <button
-                onClick={() => {}}
-                className='w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-[#f8f9ff] transition-colors text-left'
-              >
-                <User className='w-5 h-5 text-[#6d7b6c] flex-shrink-0' />
-                <span className='flex-1 font-jakarta text-[#191c20]'>
-                  Informasi Pribadi
-                </span>
-                <ChevronRight className='w-4 h-4 text-[#c1c9bf]' />
-              </button>
-
               {/* Logout */}
               <button
                 onClick={handleLogout}
@@ -707,7 +713,8 @@ export default function Profile() {
 
               {/* Hapus Akun */}
               <button
-                onClick={handleDeleteAccount}
+                type='button'
+                onClick={() => setShowDeleteModal(true)}
                 disabled={isDeleting}
                 className='w-full flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-red-50 transition-colors text-left disabled:opacity-60'
               >
@@ -728,7 +735,7 @@ export default function Profile() {
         onSuccess={handleWeightSuccess}
         currentWeight={currentWeight}
         allowNote={true}
-        allowMultiplePerDay={true}
+        allowMultiplePerDay={false}
       />
 
       {showPictureModal && (
@@ -809,6 +816,76 @@ export default function Profile() {
           </div>
         </div>
       )}
+
+      {showDeleteModal &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4'
+            role='dialog'
+            aria-modal='true'
+            aria-labelledby='delete-modal-title'
+            onClick={() => !isDeleting && setShowDeleteModal(false)}
+          >
+            <div
+              className='bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden p-6'
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className='flex items-center gap-3 mb-4'>
+                <div className='w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 flex-shrink-0'>
+                  <AlertTriangle className='w-6 h-6' />
+                </div>
+                <div>
+                  <h3
+                    id='delete-modal-title'
+                    className='text-lg font-bold text-[#191c20] font-lexend'
+                  >
+                    Hapus Akun Permanen?
+                  </h3>
+                  <p className='text-xs text-[#6d7b6c] font-jakarta'>
+                    Konfirmasi tindakan akun
+                  </p>
+                </div>
+              </div>
+
+              <p className='text-sm text-[#4a5568] font-jakarta leading-relaxed mb-6'>
+                Apakah Anda yakin ingin menghapus akun ini? Seluruh data
+                profil, riwayat berat badan, misi, lencana, dan poin hadiah Anda
+                akan dihapus secara permanen dan tidak dapat dipulihkan.
+              </p>
+
+              <div className='flex gap-3 justify-end'>
+                <button
+                  type='button'
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={isDeleting}
+                  className='flex-1 py-3 border border-[#c1c9bf] text-[#191c20] rounded-xl font-semibold font-jakarta hover:bg-[#f8f9ff] transition-colors disabled:opacity-50'
+                >
+                  Enggak, Batal
+                </button>
+                <button
+                  type='button'
+                  onClick={handleConfirmDelete}
+                  disabled={isDeleting}
+                  className='flex-1 py-3 bg-red-600 text-white rounded-xl font-semibold font-jakarta hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-60'
+                >
+                  {isDeleting ? (
+                    <>
+                      <span className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                      Menghapus...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className='w-4 h-4' />
+                      Iya, Hapus Akun
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

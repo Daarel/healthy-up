@@ -1,15 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { TrendingDown, TrendingUp, ArrowRight } from "lucide-react";
 
-/**
- * Kartu ringkasan berat badan untuk Dashboard.
- *
- * Props:
- *  - currentWeight    {number}
- *  - weightDiff       {number}  selisih vs sebelumnya (negatif = turun)
- *  - targetWeight     {number}
- *  - isLoggedThisWeek {boolean}
- */
 export default function WeightCard({
   currentWeight,
   weightDiff,

@@ -4,6 +4,7 @@ import { Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
 import Logo from "../components/ui/logo";
 import { useNavigateWithTransition } from "../lib/useNavigateWithTransition";
 import { authApi } from "../lib/api";
+import { getRoleFromToken } from "../lib/jwt";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
@@ -42,8 +43,14 @@ export default function Login() {
 
     try {
       const res = await authApi.login(email, password);
-      setUser(res.data.user);
-      navigate("/dashboard");
+      const token = res?.data?.token;
+      const role = getRoleFromToken(token) || res?.data?.user?.role || "user";
+      setUser({ ...res.data.user, role });
+      if (role === "admin") {
+        navigate("/admin/users");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       setServerError(err.message);
     } finally {
@@ -205,7 +212,7 @@ export default function Login() {
       <div className="hidden lg:block lg:w-1/2 bg-[#e5eeff] p-6">
         <div className="h-full rounded-3xl overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&h=1600&fit=crop"
+            src="/4.jpg"
             alt="Fitness"
             className="w-full h-full object-cover"
           />

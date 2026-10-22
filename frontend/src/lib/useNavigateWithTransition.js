@@ -18,6 +18,6 @@ export function useNavigateWithTransition() {
     setTimeout(() => {
       root.classList.remove("page-exit");
       navigate(to);
-    }, 200); // sesuai durasi page-exit di CSS
+    }, 200);
   };
 }

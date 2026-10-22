@@ -5,8 +5,10 @@ class UserService {
     const userProfile = await prisma.user.findUnique({
       where: { id: userId },
       select: {
+        id: true,
         username: true,
         email: true,
+        role: true,
         rankTitle: true,
         level: true,
         experiencePoints: true,
@@ -72,6 +74,46 @@ class UserService {
     return updatedUser;
   }
 
+  static calculateLevelAndRank(currentExp, currentLevel, currentRankTitle, badges = []) {
+    let exp = currentExp;
+    let level = currentLevel;
+    let rankTitle = currentRankTitle;
+    const updatedBadges = [...(badges || [])];
+
+    while (level < 30) {
+      const expRequired = level * 1000;
+      if (exp >= expRequired) {
+        exp -= expRequired;
+        level += 1;
+
+        if (level >= 25) rankTitle = 'legenda';
+        else if (level >= 20) rankTitle = 'master_vitalitas';
+        else if (level >= 15) rankTitle = 'kesatria_bugar';
+        else if (level >= 10) rankTitle = 'pejuang_sehat';
+        else if (level >= 5) rankTitle = 'penggerak';
+
+        if (level === 10 && !updatedBadges.includes('LEVEL_10')) {
+          updatedBadges.push('LEVEL_10');
+        }
+        if (level === 20 && !updatedBadges.includes('LEVEL_20')) {
+          updatedBadges.push('LEVEL_20');
+        }
+        if (level === 30 && !updatedBadges.includes('LEVEL_30')) {
+          updatedBadges.push('LEVEL_30');
+        }
+      } else {
+        break;
+      }
+    }
+
+    return {
+      experiencePoints: exp,
+      level,
+      rankTitle,
+      badges: updatedBadges,
+    };
+  }
+
   static async processLevelUp(userId) {
     const currentUser = await prisma.user.findUnique({
       where: { id: userId },
@@ -83,11 +125,11 @@ class UserService {
       },
     });
 
+    if (!currentUser) throw new Error('USER_NOT_FOUND');
+
     if (currentUser.level >= 30) {
       throw new Error('MAX_LEVEL_REACHED');
     }
-
-    if (!currentUser) throw new Error('USER_NOT_FOUND');
 
     const expRequired = currentUser.level * 1000;
 
@@ -95,27 +137,13 @@ class UserService {
       throw new Error('INSUFFICIENT_EXP');
     }
 
-    const newLevel = currentUser.level + 1;
-    const remainingExp = currentUser.experiencePoints - expRequired;
-    let newTitle = currentUser.rankTitle;
-
-    if (newLevel >= 25) newTitle = 'legenda';
-    else if (newLevel >= 20) newTitle = 'master_vitalitas';
-    else if (newLevel >= 15) newTitle = 'kesatria_bugar';
-    else if (newLevel >= 10) newTitle = 'pejuang_sehat';
-    else if (newLevel >= 5) newTitle = 'penggerak';
-
-    let updatedBadges = [...currentUser.badges];
-
-    if (newLevel === 10 && !updatedBadges.includes('LEVEL_10')) {
-      updatedBadges.push('LEVEL_10');
-    }
-    if (newLevel === 20 && !updatedBadges.includes('LEVEL_20')) {
-      updatedBadges.push('LEVEL_20');
-    }
-    if (newLevel === 30 && !updatedBadges.includes('LEVEL_30')) {
-      updatedBadges.push('LEVEL_30');
-    }
+    const { experiencePoints: remainingExp, level: newLevel, rankTitle: newTitle, badges: updatedBadges } =
+      this.calculateLevelAndRank(
+        currentUser.experiencePoints,
+        currentUser.level,
+        currentUser.rankTitle,
+        currentUser.badges,
+      );
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },

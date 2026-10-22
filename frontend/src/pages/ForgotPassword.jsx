@@ -109,11 +109,10 @@ export default function ForgotPassword() {
         <div className="h-8" />
       </div>
 
-      {/* Right Side */}
       <div className="hidden lg:block lg:w-1/2 bg-[#e5eeff] p-6">
         <div className="h-full rounded-[32px] overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&h=1600&fit=crop"
+            src="/2.jpg"
             alt="Fitness"
             className="w-full h-full object-cover"
           />

@@ -1,15 +1,5 @@
 import { Flame } from "lucide-react";
 
-/**
- * Komponen streak harian.
- *
- * Props:
- *  - count     {number}   jumlah hari streak
- *  - variant   {"badge"|"compact"}
- *              "badge"   — kotak oranye dengan ikon, label "Streak" + "{count} Hari"  (default, untuk Dashboard)
- *              "compact" — hanya angka + "Hari Streak" tanpa ikon (untuk Hadiah / card kecil)
- *  - className {string}   class tambahan pada wrapper
- */
 export default function Streak({ count, variant = "badge", className = "" }) {
   if (variant === "compact") {
     return (

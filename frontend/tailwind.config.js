@@ -11,7 +11,15 @@ export default {
         jakarta: ['Plus Jakarta Sans', 'sans-serif'],
       },
       colors: {
-        primary: '#006e2f',
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: '#006e2f',
+          foreground: '#ffffff',
+        },
         'on-primary': '#ffffff',
         'primary-container': '#22c55e',
         'on-primary-container': '#002109',
@@ -19,10 +27,33 @@ export default {
         'primary-fixed-dim': '#58c26b',
         'on-primary-fixed': '#002109',
         'on-primary-fixed-variant': '#005323',
-        secondary: '#516351',
+        secondary: {
+          DEFAULT: '#516351',
+          foreground: '#ffffff',
+        },
         'on-secondary': '#ffffff',
         'secondary-container': '#d4e8d0',
         'on-secondary-container': '#0f1f11',
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
         tertiary: '#39656d',
         'on-tertiary': '#ffffff',
         'tertiary-container': '#bce9f2',

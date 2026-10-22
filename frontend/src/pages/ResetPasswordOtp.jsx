@@ -98,7 +98,7 @@ export default function ResetPasswordOtp() {
           {/* Icon */}
          
 
-          <h2 className="text-3xl text-left mb-10 font-bold text-[#005823] font-lexend mb-2">
+          <h2 className="text-3xl text-left mb-10 font-bold text-[#005823] font-lexend">
             Verifikasi OTP
           </h2>
           <p className="text-[#6d7b6c] font-jakarta mb-2">
@@ -176,7 +176,7 @@ export default function ResetPasswordOtp() {
       <div className="hidden lg:block lg:w-1/2 bg-[#e5eeff] p-6">
         <div className="h-full rounded-[32px] overflow-hidden">
           <img
-            src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1200&h=1600&fit=crop"
+            src="/6.jpg"
             alt="Fitness"
             className="w-full h-full object-cover"
           />

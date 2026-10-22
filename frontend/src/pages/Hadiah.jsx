@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Streak from '../components/ui/streak';
-import { mapReward, mapUserReward } from '../features/rewards/rewardMappers';
+import { mapReward, mapUserReward } from '../lib/rewardMappers';
 import { rewardApi, userApi } from '../lib/api';
 
 const VOUCHER_CATEGORIES = ['semua', 'Kesehatan', 'Makanan', 'Gym'];

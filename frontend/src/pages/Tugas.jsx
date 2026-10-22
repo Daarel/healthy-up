@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   CheckCircle2,
   Clock,
@@ -16,6 +16,9 @@ import {
   Clapperboard,
   Lightbulb,
   ClipboardList,
+  Sparkle,
+  RefreshCw,
+  Target,
   // icon misi dari backend
   Brain,
   Dumbbell,
@@ -51,6 +54,9 @@ const ICON_MAP = {
   wind: Wind,
   bike: Bike,
   salad: Salad,
+  mental: Brain,
+  nutrition: UtensilsCrossed,
+  physical: Dumbbell,
 };
 
 // Warna icon berdasarkan kategori
@@ -61,7 +67,11 @@ const CATEGORY_ICON_COLOR = {
 };
 
 function getTaskIcon(iconName, category) {
-  return ICON_MAP[iconName?.toLowerCase()] ?? ICON_MAP[category] ?? Activity;
+  const key = iconName?.toLowerCase();
+  if (key && key !== 'activity' && ICON_MAP[key]) {
+    return ICON_MAP[key];
+  }
+  return ICON_MAP[category?.toLowerCase()] ?? Activity;
 }
 
 export default function Tugas() {
@@ -74,7 +84,7 @@ export default function Tugas() {
     }
   });
 
-  const [weightData] = useState(() => {
+  const [weightData, setWeightData] = useState(() => {
     try {
       const stored = JSON.parse(localStorage.getItem('healthyup:weightLog'));
       const onboardingWeight =
@@ -90,22 +100,101 @@ export default function Tugas() {
 
   // --- State dari API ---
   const [tasks, setTasks] = useState([]); // flat array dari backend
-  
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [isGeneratingWeekly, setIsGeneratingWeekly] = useState(false);
+  const [weeklyRefreshNotice, setWeeklyRefreshNotice] = useState('');
   const [error, setError] = useState(null);
   const hasFetched = useRef(false);
+  const hasAutoRefreshed = useRef(false);
 
-  // Fetch misi saat komponen mount
+  // Fungsi untuk men-generate misi minggu baru secara langsung (otomatis maupun tombol manual)
+  const handleGenerateNewWeek = useCallback(async (isAuto = false) => {
+    if (!missionApi?.generate || !missionApi?.getAll) return;
+    setIsGeneratingWeekly(true);
+    setError(null);
+    try {
+      await missionApi.generate();
+      const res = await missionApi.getAll();
+      const newMissions = res?.data?.missions || [];
+      setTasks(newMissions);
+      setWeeklyRefreshNotice(
+        isAuto
+          ? 'Selamat memasuki minggu baru! AI telah otomatis menyusun misi baru untukmu.'
+          : 'Misi minggu ini berhasil diperbarui oleh AI!',
+      );
+    } catch (err) {
+      if (!isAuto) {
+        setError(err.message || 'Gagal membuat misi mingguan baru.');
+      }
+    } finally {
+      setIsGeneratingWeekly(false);
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch misi saat komponen mount + cek auto-refresh mingguan
   useEffect(() => {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
+    if (!missionApi?.getAll) {
+      return;
+    }
+
     missionApi
       .getAll()
-      .then((res) => setTasks(res.data.missions))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+      .then(async (res) => {
+        const fetchedMissions = res?.data?.missions || [];
+        if (fetchedMissions.length > 0) {
+          setTasks(fetchedMissions);
+          setSetupDone(true);
+          try {
+            localStorage.setItem('healthyup:setupDone', 'true');
+          } catch (e) {
+            console.error(e);
+          }
+          setLoading(false);
+          return;
+        }
+
+        // Jika misi kosong (0), cek apakah user sudah punya profil kesehatan (minggu baru)
+        let profileExists = false;
+        try {
+          profileExists = localStorage.getItem('healthyup:setupDone') === 'true';
+        } catch {
+          profileExists = false;
+        }
+
+        if (healthApi?.getMyProfile) {
+          try {
+            const profRes = await healthApi.getMyProfile();
+            const profile = profRes?.data?.profile;
+            if (profile) {
+              profileExists = true;
+              setSetupDone(true);
+              setWeightData((prev) => ({
+                currentWeight: Number(profile.weightKg) || prev.currentWeight,
+                targetWeight: Number(profile.goalWeight) || prev.targetWeight,
+              }));
+              localStorage.setItem('healthyup:setupDone', 'true');
+            }
+          } catch {
+            // Profil belum dibuat di server
+          }
+        }
+
+        if (profileExists && !hasAutoRefreshed.current && missionApi?.generate) {
+          hasAutoRefreshed.current = true;
+          await handleGenerateNewWeek(true);
+        } else {
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [handleGenerateNewWeek]);
 
   const hasTasks = tasks.length > 0;
 
@@ -138,13 +227,14 @@ export default function Tugas() {
       console.error(err);
     }
 
+    setWeightData({ currentWeight: newWeight, targetWeight: newTarget });
     setSetupDone(true);
     setLoading(true);
     setError(null);
 
     try {
-      // 1. Simpan health profile ke backend dulu
-      await healthApi.createProfile({
+      // 1. Simpan/update health profile ke backend dulu
+      await healthApi?.createProfile?.({
         gender,
         age,
         heightCm: height,
@@ -166,11 +256,13 @@ export default function Tugas() {
 
     try {
       // 2. Generate misi via AI
-      await missionApi.generate();
+      await missionApi?.generate?.();
       // 3. Ambil misi yang baru dibuat
       const res = await missionApi.getAll();
-      setTasks(res.data.missions);
-      return res.data.missions;
+      const generatedMissions = res?.data?.missions || [];
+      setTasks(generatedMissions);
+      setWeeklyRefreshNotice('Target diperbarui dan misi minggu ini berhasil disusun oleh AI!');
+      return generatedMissions;
     } catch (err) {
       setError(err.message);
       return [];
@@ -215,7 +307,7 @@ export default function Tugas() {
   // Semua tugas dari API (flat array)
   const currentTasks = tasks;
   const completedCount = currentTasks.filter(
-    (t) => t.status === 'completed',
+    (t) => t.status === 'completed' && t.verificationStatus === 'approved',
   ).length;
   const totalPoints = currentTasks
     .filter((t) => t.status === 'completed')
@@ -224,25 +316,12 @@ export default function Tugas() {
     .filter((t) => t.status === 'completed')
     .reduce((sum, t) => sum + (t.xpReward ?? 0), 0);
 
-  // Tandai tugas selesai secara optimistic (UI langsung berubah, konfirmasi via upload bukti)
-  const toggleTask = (taskId) => {
-    setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId
-          ? {
-              ...t,
-              status: t.status === 'completed' ? 'assigned' : 'completed',
-            }
-          : t,
-      ),
-    );
-  };
-
   const openUploadModal = (task) => {
     setSelectedTask(task);
     setUploadModalOpen(true);
     setPreviewMedia([]);
     setNotes('');
+    setSubmitError(null);
   };
 
   const closeUploadModal = () => {
@@ -250,6 +329,7 @@ export default function Tugas() {
     setSelectedTask(null);
     setPreviewMedia([]);
     setNotes('');
+    setSubmitError(null);
   };
 
   const handleFileChange = (e) => {
@@ -291,7 +371,12 @@ export default function Tugas() {
     try {
       // Kirim file pertama sebagai bukti ke backend
       const proofFile = previewMedia[0]?.file ?? null;
-      await missionApi.updateStatus(selectedTask.id, 'completed', proofFile);
+      const res = await missionApi.updateStatus(
+        selectedTask.id,
+        'completed',
+        proofFile,
+      );
+      const updatedMission = res?.data?.mission;
 
       // Update state lokal setelah berhasil
       setUploadedProofs((prev) => ({
@@ -303,12 +388,44 @@ export default function Tugas() {
         },
       }));
 
-      // Optimistic update status di state
+      // Update state tugas dengan data terbaru dari server (status completed + verificationStatus pending)
       setTasks((prev) =>
         prev.map((t) =>
-          t.id === selectedTask.id ? { ...t, status: 'completed' } : t,
+          t.id === selectedTask.id
+            ? {
+                ...t,
+                ...(updatedMission || {}),
+                status: 'completed',
+                verificationStatus:
+                  updatedMission?.verificationStatus || 'pending',
+                proofImagePath:
+                  updatedMission?.proofImagePath ||
+                  previewMedia[0]?.src ||
+                  t.proofImagePath,
+                rejectionReason: null,
+              }
+            : t,
         ),
       );
+
+      if (detailTask?.id === selectedTask.id) {
+        setDetailTask((prev) =>
+          prev
+            ? {
+                ...prev,
+                ...(updatedMission || {}),
+                status: 'completed',
+                verificationStatus:
+                  updatedMission?.verificationStatus || 'pending',
+                proofImagePath:
+                  updatedMission?.proofImagePath ||
+                  previewMedia[0]?.src ||
+                  prev.proofImagePath,
+                rejectionReason: null,
+              }
+            : prev,
+        );
+      }
 
       closeUploadModal();
     } catch (err) {
@@ -318,20 +435,13 @@ export default function Tugas() {
     }
   };
 
-  const handleDeleteProof = (taskId) => {
-    setUploadedProofs((prev) => {
-      const next = { ...prev };
-      delete next[taskId];
-      return next;
-    });
-    // Batalkan status selesai jika bukti dihapus (hanya di UI lokal)
-    setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: 'assigned' } : t)),
+  const hasProof = (task) =>
+    Boolean(
+      task &&
+        (task.proofImagePath ||
+          uploadedProofs[task.id] ||
+          task.status === 'completed'),
     );
-    closeUploadModal();
-  };
-
-  const hasProof = (taskId) => Boolean(uploadedProofs[taskId]);
 
   return (
     <div className='min-h-screen bg-[var(--color-bg)]'>
@@ -351,20 +461,51 @@ export default function Tugas() {
                 target
               </p>
             </div>
-            <div className='hidden sm:flex items-center gap-2 bg-white border border-[#e5eeff] rounded-2xl px-4 py-2 shadow-sm'>
-              <Clock className='w-4 h-4 text-[#006e2f]' />
-              <span className='text-xs text-[#6d7b6c] font-jakarta'>
-                Diperbarui setiap minggu
-              </span>
+            <div className='hidden sm:flex items-center gap-2'>
+              <div className='flex items-center gap-2 bg-white border border-[#e5eeff] rounded-2xl px-4 py-2 shadow-sm'>
+                <Clock className='w-4 h-4 text-[#006e2f]' />
+                <span className='text-xs text-[#6d7b6c] font-jakarta'>
+                  Diperbarui setiap minggu
+                </span>
+              </div>
             </div>
           </div>
 
+          {/* Banner notifikasi saat misi minggu baru berhasil diperbarui */}
+          {weeklyRefreshNotice && (
+            <div className='mb-6 flex items-center justify-between gap-3 rounded-2xl bg-[#f0faf4] border border-[#006e2f]/20 px-5 py-3.5 shadow-sm'>
+              <div className='flex items-center gap-3'>
+                <CheckCircle2 className='w-5 h-5 text-[#006e2f] flex-shrink-0' />
+                <p className='text-sm font-medium text-[#005823] font-jakarta'>
+                  {weeklyRefreshNotice}
+                </p>
+              </div>
+              <button
+                type='button'
+                onClick={() => setWeeklyRefreshNotice('')}
+                aria-label='Tutup notifikasi'
+                className='text-[#6d7b6c] hover:text-[#191c20] p-1 rounded-lg transition-colors'
+              >
+                <X className='w-4 h-4' />
+              </button>
+            </div>
+          )}
+
           {/* Konten utama atau empty state */}
-          {loading ? (
-            // Loading skeleton
+          {loading || isGeneratingWeekly ? (
+            // Loading / AI Generating skeleton
             <div className='flex flex-col items-center justify-center py-20 text-center'>
               <div className='w-12 h-12 border-4 border-[#006e2f] border-t-transparent rounded-full animate-spin mb-4' />
-              <p className='text-[#6d7b6c] font-jakarta'>Memuat tugas...</p>
+              <p className='text-[#191c20] font-semibold font-lexend'>
+                {isGeneratingWeekly
+                  ? 'AI sedang menyusun misi baru untuk minggu ini...'
+                  : 'Memuat tugas...'}
+              </p>
+              {isGeneratingWeekly && (
+                <p className='text-sm text-[#6d7b6c] font-jakarta mt-1'>
+                  Menyesuaikan tantangan dengan profil dan target kesehatanmu
+                </p>
+              )}
             </div>
           ) : error ? (
             // Error state
@@ -378,39 +519,75 @@ export default function Tugas() {
               <p className='text-[#6d7b6c] font-jakarta max-w-xs leading-relaxed'>
                 {error}
               </p>
-              <button
-                onClick={() => {
-                  setLoading(true);
-                  setError(null);
-                  missionApi
-                    .getAll()
-                    .then((r) => setTasks(r.data.missions))
-                    .catch((e) => setError(e.message))
-                    .finally(() => setLoading(false));
-                }}
-                className='mt-6 px-6 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005823] transition-colors'
-              >
-                Coba Lagi
-              </button>
+              <div className='mt-6 flex flex-wrap items-center justify-center gap-3'>
+                <button
+                  onClick={() => {
+                    setLoading(true);
+                    setError(null);
+                    missionApi
+                      .getAll()
+                      .then((r) => setTasks(r.data.missions))
+                      .catch((e) => setError(e.message))
+                      .finally(() => setLoading(false));
+                  }}
+                  className='px-6 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005823] transition-colors'
+                >
+                  Coba Lagi
+                </button>
+                {setupDone && (
+                  <button
+                    onClick={() => handleGenerateNewWeek(false)}
+                    className='flex items-center gap-2 px-6 py-3 border-2 border-[#006e2f] text-[#006e2f] rounded-xl font-semibold font-lexend hover:bg-green-50 transition-colors'
+                  >
+                    <RefreshCw className='w-4 h-4' />
+                    Generate Misi Baru
+                  </button>
+                )}
+              </div>
             </div>
           ) : !hasTasks ? (
             <div className='flex flex-col items-center justify-center py-20 text-center'>
-              <div className='w-20 h-20 rounded-3xl bg-gray-100 flex items-center justify-center mb-5'>
-                <ClipboardList className='w-10 h-10 text-[#006e2f]' />
+              <div className='w-20 h-20 rounded-3xl bg-[#f0faf4] flex items-center justify-center mb-5'>
+                {setupDone ? (
+                  <Sparkle className='w-10 h-10 text-[#006e2f]' />
+                ) : (
+                  <ClipboardList className='w-10 h-10 text-[#006e2f]' />
+                )}
               </div>
               <h2 className='text-xl font-bold text-[#191c20] font-lexend mb-2'>
                 Belum ada tugas minggu ini
               </h2>
-              <p className='text-[#6d7b6c] font-jakarta max-w-xs leading-relaxed'>
-                Tugas mingguan akan muncul setelah kamu mengatur target &amp;
-                profil kesehatanmu.
+              <p className='text-[#6d7b6c] font-jakarta max-w-sm leading-relaxed'>
+                {setupDone
+                  ? 'Siklus misi 7 hari sebelumnya telah berakhir. Buat misi baru untuk minggu ini dengan AI atau perbarui target berat badanmu.'
+                  : 'Tugas mingguan akan muncul setelah kamu mengatur target & profil kesehatanmu.'}
               </p>
-              <button
-                onClick={() => setShowSetupModal(true)}
-                className='mt-6 px-6 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005823] transition-colors'
-              >
-                Atur Target Sekarang
-              </button>
+              <div className='mt-6 flex flex-wrap items-center justify-center gap-3'>
+                {setupDone && (
+                  <button
+                    type='button'
+                    onClick={() => handleGenerateNewWeek(false)}
+                    disabled={isGeneratingWeekly}
+                    className='flex items-center gap-2 px-6 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005823] transition-colors disabled:opacity-60'
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 ${isGeneratingWeekly ? 'animate-spin' : ''}`}
+                    />
+                    Generate Misi Minggu Ini
+                  </button>
+                )}
+                <button
+                  type='button'
+                  onClick={() => setShowSetupModal(true)}
+                  className={
+                    setupDone
+                      ? 'px-6 py-3 border-2 border-[#c1c9bf] text-[#191c20] rounded-xl font-semibold font-lexend hover:bg-[#f8f9ff] transition-colors'
+                      : 'px-6 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005823] transition-colors'
+                  }
+                >
+                  Atur Target Sekarang
+                </button>
+              </div>
             </div>
           ) : (
             <>
@@ -474,134 +651,157 @@ export default function Tugas() {
 
               {/* Tasks List */}
               <div className='bg-white rounded-3xl shadow-[0_8px_30px_rgba(34,197,94,0.08)] border border-[#e5eeff] overflow-hidden'>
-                {currentTasks.map((task, index) => (
-                  <div
-                    key={task.id}
-                    className={`flex items-center gap-4 p-5 hover:bg-[#f8f9ff] transition-colors cursor-pointer ${
-                      index !== currentTasks.length - 1
-                        ? 'border-b border-[#e5eeff]'
-                        : ''
-                    }`}
-                    onClick={() => openDetail(task)}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleTask(task.id);
-                      }}
-                      aria-label={
-                        task.status === 'completed'
-                          ? 'Batalkan tugas'
-                          : 'Tandai selesai'
-                      }
-                      className={`w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center transition-colors ${
-                        task.status === 'completed'
-                          ? 'bg-[#006e2f] text-white hover:bg-[#005823]'
-                          : 'bg-[#e5eeff] hover:bg-[#dce9ff]'
+                {currentTasks.map((task, index) => {
+                  const isApproved =
+                    task.status === 'completed' &&
+                    task.verificationStatus === 'approved';
+                  const isPending =
+                    task.status === 'completed' &&
+                    task.verificationStatus === 'pending';
+
+                  return (
+                    <div
+                      key={task.id}
+                      className={`flex items-center gap-4 p-5 hover:bg-[#f8f9ff] transition-colors cursor-pointer ${
+                        index !== currentTasks.length - 1
+                          ? 'border-b border-[#e5eeff]'
+                          : ''
                       }`}
+                      onClick={() => openDetail(task)}
                     >
-                      {task.status === 'completed' ? (
-                        <CheckCircle2 className='w-6 h-6' />
-                      ) : (
-                        (() => {
-                          const IconComp = getTaskIcon(
-                            task.icon,
-                            task.category,
-                          );
-                          const colorClass =
-                            CATEGORY_ICON_COLOR[task.category] ??
-                            'text-[#006e2f]';
-                          return (
-                            <IconComp className={`w-6 h-6 ${colorClass}`} />
-                          );
-                        })()
-                      )}
-                    </button>
-                    <div className='flex-1 min-w-0'>
-                      <p
-                        className={`font-medium font-jakarta ${
-                          task.status === 'completed'
-                            ? 'text-[#6d7b6c] line-through'
-                            : 'text-[#191c20]'
+                      <div
+                        className={`w-12 h-12 flex-shrink-0 rounded-xl flex items-center justify-center transition-colors ${
+                          isApproved
+                            ? 'bg-[#006e2f] text-white'
+                            : isPending
+                              ? 'bg-amber-100 text-amber-600'
+                              : 'bg-[#e5eeff]'
                         }`}
                       >
-                        {task.title}
-                      </p>
-                      {/* Kategori + Difficulty */}
-                      <div className='flex items-center gap-2 mb-1'>
-                        <p className='text-xs text-[#6d7b6c] font-jakarta capitalize'>
-                          {task.category}
-                        </p>
-                        {task.difficultyScore > 0 && (
-                          <span className='flex items-center gap-0.5'>
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <span
-                                key={i}
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  i < task.difficultyScore
-                                    ? 'bg-[#006e2f]'
-                                    : 'bg-[#e5eeff]'
-                                }`}
-                              />
-                            ))}
-                          </span>
+                        {isApproved ? (
+                          <CheckCircle2 className='w-6 h-6' />
+                        ) : isPending ? (
+                          <Clock className='w-6 h-6' />
+                        ) : (
+                          (() => {
+                            const IconComp = getTaskIcon(
+                              task.icon,
+                              task.category,
+                            );
+                            const colorClass =
+                              CATEGORY_ICON_COLOR[task.category] ??
+                              'text-[#006e2f]';
+                            return (
+                              <IconComp className={`w-6 h-6 ${colorClass}`} />
+                            );
+                          })()
                         )}
                       </div>
-                      {task.description && (
-                        <p className='text-xs text-[#8f9d8e] font-jakarta leading-relaxed line-clamp-2'>
-                          {task.description}
+                      <div className='flex-1 min-w-0'>
+                        <p
+                          className={`font-medium font-jakarta ${
+                            isApproved
+                              ? 'text-[#6d7b6c] line-through'
+                              : 'text-[#191c20]'
+                          }`}
+                        >
+                          {task.title}
                         </p>
-                      )}
-                      {hasProof(task.id) && (
-                        <div className='flex items-center gap-1 mt-1'>
-                          <CheckCircle2 className='w-4 h-4 text-green-500' />
-                          <span className='text-xs text-green-600 font-jakarta'>
-                            {uploadedProofs[task.id].media.length} bukti
-                            diupload
+                        {/* Kategori + Difficulty */}
+                        <div className='flex items-center gap-2 mb-1'>
+                          <p className='text-xs text-[#6d7b6c] font-jakarta capitalize'>
+                            {task.category}
+                          </p>
+                          {task.difficultyScore > 0 && (
+                            <span className='flex items-center gap-0.5'>
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <span
+                                  key={i}
+                                  className={`w-1.5 h-1.5 rounded-full ${
+                                    i < task.difficultyScore
+                                      ? 'bg-[#006e2f]'
+                                      : 'bg-[#e5eeff]'
+                                  }`}
+                                />
+                              ))}
+                            </span>
+                          )}
+                        </div>
+                        {task.description && (
+                          <p className='text-xs text-[#8f9d8e] font-jakarta leading-relaxed line-clamp-2'>
+                            {task.description}
+                          </p>
+                        )}
+                        {isPending && (
+                          <div className='flex items-center gap-1 mt-1'>
+                            <Clock className='w-3.5 h-3.5 text-amber-500' />
+                            <span className='text-xs text-amber-600 font-jakarta'>
+                              Menunggu verifikasi admin (klik misi untuk detail / ganti bukti)
+                            </span>
+                          </div>
+                        )}
+                        {isApproved && (
+                          <div className='flex items-center gap-1 mt-1'>
+                            <CheckCircle2 className='w-3.5 h-3.5 text-green-600' />
+                            <span className='text-xs text-green-600 font-jakarta'>
+                              Bukti disetujui
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <div className='flex flex-col items-end gap-1.5'>
+                        {/* Points badge */}
+                        <div className='flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-full'>
+                          <Star className='w-3.5 h-3.5 text-yellow-500' />
+                          <span className='text-xs font-semibold text-yellow-700 font-lexend'>
+                            +{task.pointsReward ?? 0}
                           </span>
                         </div>
-                      )}
-                    </div>
-                    <div className='flex flex-col items-end gap-1.5'>
-                      {/* Points badge */}
-                      <div className='flex items-center gap-1 bg-yellow-50 px-2.5 py-1 rounded-full'>
-                        <Star className='w-3.5 h-3.5 text-yellow-500' />
-                        <span className='text-xs font-semibold text-yellow-700 font-lexend'>
-                          +{task.pointsReward ?? 0}
-                        </span>
-                      </div>
-                      {/* XP badge */}
-                      <div className='flex items-center gap-1 bg-purple-50 px-2.5 py-1 rounded-full'>
-                        <Flame className='w-3.5 h-3.5 text-purple-500' />
-                        <span className='text-xs font-semibold text-purple-700 font-lexend'>
-                          +{task.xpReward ?? 0} XP
-                        </span>
-                      </div>
+                        {/* XP badge */}
+                        <div className='flex items-center gap-1 bg-purple-50 px-2.5 py-1 rounded-full'>
+                          <Flame className='w-3.5 h-3.5 text-purple-500' />
+                          <span className='text-xs font-semibold text-purple-700 font-lexend'>
+                            +{task.xpReward ?? 0} XP
+                          </span>
+                        </div>
 
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openUploadModal(task);
-                        }}
-                        disabled={task.status === 'completed'}
-                        className={`flex items-center gap-1 px-3 py-2 rounded-xl font-medium text-sm font-jakarta transition-colors ${
-                          task.status === 'completed'
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : hasProof(task.id)
-                              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-                              : 'bg-[#006e2f] text-white hover:bg-[#005823]'
-                        }`}
-                      >
-                        {hasProof(task.id) ? (
-                          <Eye className='w-4 h-4' />
-                        ) : (
-                          <Upload className='w-4 h-4' />
-                        )}
-                        {hasProof(task.id) ? 'Lihat' : 'Upload'}
-                      </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (task.status !== 'completed') {
+                              openUploadModal(task);
+                            }
+                          }}
+                          disabled={task.status === 'completed'}
+                          className={`flex items-center gap-1 px-3 py-2 rounded-xl font-medium text-sm font-jakarta transition-colors ${
+                            isApproved
+                              ? 'bg-green-50 text-green-700 cursor-not-allowed'
+                              : isPending
+                                ? 'bg-amber-50 text-amber-600 cursor-not-allowed'
+                                : 'bg-[#006e2f] text-white hover:bg-[#005823]'
+                          }`}
+                        >
+                          {isApproved ? (
+                            <>
+                              <CheckCircle2 className='w-4 h-4' />
+                              Disetujui
+                            </>
+                          ) : isPending ? (
+                            <>
+                              <Clock className='w-4 h-4' />
+                              Pending
+                            </>
+                          ) : (
+                            <>
+                              <Upload className='w-4 h-4' />
+                              Upload
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Empty State */}
@@ -624,12 +824,10 @@ export default function Tugas() {
           {/* Backdrop */}
           <div className='absolute inset-0 bg-black/40 backdrop-blur-sm' />
 
-          {/* Drawer dari kanan */}
           <div
             className='relative ml-auto w-full max-w-md h-full bg-white shadow-2xl overflow-y-auto flex flex-col'
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div className='sticky top-0 z-10 bg-white border-b border-[#e5eeff] px-6 py-4 flex items-center justify-between'>
               <h2 className='text-lg font-bold text-[#191c20] font-lexend'>
                 Detail Misi
@@ -873,20 +1071,19 @@ export default function Tugas() {
                     {/* Action button */}
                     <button
                       onClick={() => {
+                        if (detailTask.verificationStatus === 'approved') return;
                         closeDetail();
                         openUploadModal(detailTask);
                       }}
-                      disabled={detailTask.status === 'completed'}
+                      disabled={detailTask.verificationStatus === 'approved'}
                       className={`w-full py-4 rounded-2xl font-semibold font-lexend flex items-center justify-center gap-2 transition-colors ${
-                        detailTask.status === 'completed'
+                        detailTask.verificationStatus === 'approved'
                           ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                           : 'bg-[#006e2f] text-white hover:bg-[#005823]'
                       }`}
                     >
                       <Upload className='w-5 h-5' />
-                      {hasProof(detailTask.id)
-                        ? 'Lihat / Ganti Bukti'
-                        : 'Upload Bukti'}
+                      {hasProof(detailTask) ? 'Ganti Bukti' : 'Upload Bukti'}
                     </button>
                   </div>
                 );
@@ -904,23 +1101,21 @@ export default function Tugas() {
             <div className='flex items-center justify-between p-6 border-b border-[#e5eeff]'>
               <div>
                 <h3 className='text-xl font-bold text-[#191c20] font-lexend'>
-                  {hasProof(selectedTask.id) ? 'Bukti Tugas' : 'Upload Bukti'}
+                  {hasProof(selectedTask) ? 'Ganti Bukti Tugas' : 'Upload Bukti'}
                 </h3>
                 <p className='text-sm text-[#6d7b6c] font-jakarta'>
                   {selectedTask.title}
                 </p>
               </div>
               <div className='flex items-center gap-2'>
-                {!hasProof(selectedTask.id) && (
-                  <button
-                    onClick={() => setGuideModalOpen(true)}
-                    className='flex items-center gap-1 px-3 py-2 rounded-xl bg-gray-100 text-blue-600 hover:bg-blue-100 transition-colors text-sm font-medium font-jakarta'
-                    title='Lihat Panduan Upload'
-                  >
-                    <HelpCircle className='w-4 h-4' />
-                    Panduan
-                  </button>
-                )}
+                <button
+                  onClick={() => setGuideModalOpen(true)}
+                  className='flex items-center gap-1 px-3 py-2 rounded-xl bg-gray-100 text-blue-600 hover:bg-blue-100 transition-colors text-sm font-medium font-jakarta'
+                  title='Lihat Panduan Upload'
+                >
+                  <HelpCircle className='w-4 h-4' />
+                  Panduan
+                </button>
                 <button
                   onClick={closeUploadModal}
                   className='w-10 h-10 rounded-xl bg-[#f8f9ff] flex items-center justify-center hover:bg-[#e5eeff] transition-colors'
@@ -932,144 +1127,111 @@ export default function Tugas() {
 
             {/* Modal Body */}
             <div className='p-6'>
-              {hasProof(selectedTask.id) ? (
-                // View Mode - Show uploaded proof
-                <div className='space-y-4'>
-                  <div className='grid grid-cols-2 gap-2'>
-                    {uploadedProofs[selectedTask.id].media.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className='rounded-2xl overflow-hidden border border-[#e5eeff]'
-                      >
-                        {item.type === 'video' ? (
-                          <video
-                            src={item.src}
-                            controls
-                            className='w-full h-32 object-cover'
-                          />
-                        ) : (
-                          <img
-                            src={item.src}
-                            alt={`Bukti ${idx + 1}`}
-                            className='w-full h-32 object-cover'
-                          />
-                        )}
-                      </div>
-                    ))}
+              <div className='space-y-4'>
+                {/* Tampilkan bukti sebelumnya jika user sedang mengganti bukti */}
+                {selectedTask.proofImagePath && previewMedia.length === 0 && (
+                  <div>
+                    <p className='text-xs font-semibold text-[#6d7b6c] font-lexend mb-2 uppercase tracking-wide'>
+                      Bukti Saat Ini
+                    </p>
+                    <img
+                      src={selectedTask.proofImagePath}
+                      alt='Bukti saat ini'
+                      className='w-full h-36 object-cover rounded-2xl border border-[#e5eeff]'
+                    />
                   </div>
-                  {uploadedProofs[selectedTask.id].notes && (
-                    <div className='bg-[#f8f9ff] rounded-xl p-4'>
-                      <p className='text-sm text-[#6d7b6c] font-jakarta mb-1'>
-                        Catatan:
-                      </p>
-                      <p className='text-[#191c20] font-jakarta'>
-                        {uploadedProofs[selectedTask.id].notes}
-                      </p>
+                )}
+
+                {/* Media Upload Area */}
+                <div>
+                  <label className='block text-sm font-semibold text-[#191c20] mb-2 font-lexend'>
+                    {hasProof(selectedTask)
+                      ? 'Pilih Foto atau Video Bukti Baru'
+                      : 'Foto atau Video Bukti'}
+                  </label>
+
+                  {/* Preview Grid */}
+                  {previewMedia.length > 0 && (
+                    <div className='grid grid-cols-2 gap-2 mb-3'>
+                      {previewMedia.map((item) => (
+                        <div
+                          key={item.id}
+                          className='relative rounded-2xl overflow-hidden border border-[#e5eeff]'
+                        >
+                          {item.type === 'video' ? (
+                            <video
+                              src={item.src}
+                              controls
+                              className='w-full h-24 object-cover'
+                            />
+                          ) : (
+                            <img
+                              src={item.src}
+                              alt={item.name}
+                              className='w-full h-24 object-cover'
+                            />
+                          )}
+                          <button
+                            onClick={() => removeMedia(item.id)}
+                            className='absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors'
+                          >
+                            <X className='w-4 h-4' />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
-                  <div className='flex items-center gap-2 text-sm text-[#6d7b6c] font-jakarta'>
-                    <Clock className='w-4 h-4' />
-                    Diupload pada {uploadedProofs[selectedTask.id].timestamp}
-                  </div>
-                  <button
-                    onClick={() => handleDeleteProof(selectedTask.id)}
-                    className='w-full py-3 border-2 border-red-200 text-red-600 rounded-xl font-medium hover:bg-red-50 transition-colors font-jakarta'
-                  >
-                    Hapus Bukti
-                  </button>
-                </div>
-              ) : (
-                // Upload Mode
-                <div className='space-y-4'>
-                  {/* Media Upload Area */}
-                  <div>
-                    <label className='block text-sm font-semibold text-[#191c20] mb-2 font-lexend'>
-                      Foto atau Video Bukti
-                    </label>
 
-                    {/* Preview Grid */}
-                    {previewMedia.length > 0 && (
-                      <div className='grid grid-cols-2 gap-2 mb-3'>
-                        {previewMedia.map((item) => (
-                          <div
-                            key={item.id}
-                            className='relative rounded-2xl overflow-hidden border border-[#e5eeff]'
-                          >
-                            {item.type === 'video' ? (
-                              <video
-                                src={item.src}
-                                controls
-                                className='w-full h-24 object-cover'
-                              />
-                            ) : (
-                              <img
-                                src={item.src}
-                                alt={item.name}
-                                className='w-full h-24 object-cover'
-                              />
-                            )}
-                            <button
-                              onClick={() => removeMedia(item.id)}
-                              className='absolute top-1 right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors'
-                            >
-                              <X className='w-4 h-4' />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <label className='flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#c1c9bf] rounded-2xl bg-[#f8f9ff] cursor-pointer hover:border-[#006e2f] hover:bg-green-50 transition-colors'>
-                      <CloudUpload className='w-10 h-10 text-[#6d7b6c] mb-2' />
-                      <p className='text-sm text-[#6d7b6c] font-jakarta'>
-                        Klik untuk upload foto/video
-                      </p>
-                      <p className='text-xs text-[#9ca3af] font-jakarta mt-1'>
-                        Bisa pilih lebih dari 1 file
-                      </p>
-                      <input
-                        type='file'
-                        accept='image/*,video/*'
-                        multiple
-                        onChange={handleFileChange}
-                        className='hidden'
-                      />
-                    </label>
-                  </div>
-
-
-
-                  {/* Submit Error */}
-                  {submitError && (
-                    <p className='text-sm text-red-600 font-jakarta text-center'>
-                      {submitError}
+                  <label className='flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-[#c1c9bf] rounded-2xl bg-[#f8f9ff] cursor-pointer hover:border-[#006e2f] hover:bg-green-50 transition-colors'>
+                    <CloudUpload className='w-10 h-10 text-[#6d7b6c] mb-2' />
+                    <p className='text-sm text-[#6d7b6c] font-jakarta'>
+                      Klik untuk upload foto/video
                     </p>
-                  )}
-
-                  {/* Submit Button */}
-                  <button
-                    onClick={handleSubmitProof}
-                    disabled={previewMedia.length === 0 || submitting}
-                    className={`w-full py-4 rounded-xl font-semibold font-lexend flex items-center justify-center gap-2 transition-colors ${
-                      previewMedia.length > 0 && !submitting
-                        ? 'bg-[#006e2f] text-white hover:bg-[#005823]'
-                        : 'bg-[#e5eeff] text-[#6d7b6c] cursor-not-allowed'
-                    }`}
-                  >
-                    {submitting ? (
-                      <>
-                        <span className='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin' />
-                        Mengirim...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 className='w-5 h-5' />
-                        Kirim Bukti ({previewMedia.length} file)
-                      </>
-                    )}
-                  </button>
+                    <p className='text-xs text-[#9ca3af] font-jakarta mt-1'>
+                      Bisa pilih lebih dari 1 file
+                    </p>
+                    <input
+                      type='file'
+                      accept='image/*,video/*'
+                      multiple
+                      onChange={handleFileChange}
+                      className='hidden'
+                    />
+                  </label>
                 </div>
-              )}
+
+                {/* Submit Error */}
+                {submitError && (
+                  <p className='text-sm text-red-600 font-jakarta text-center'>
+                    {submitError}
+                  </p>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  onClick={handleSubmitProof}
+                  disabled={previewMedia.length === 0 || submitting}
+                  className={`w-full py-4 rounded-xl font-semibold font-lexend flex items-center justify-center gap-2 transition-colors ${
+                    previewMedia.length > 0 && !submitting
+                      ? 'bg-[#006e2f] text-white hover:bg-[#005823]'
+                      : 'bg-[#e5eeff] text-[#6d7b6c] cursor-not-allowed'
+                  }`}
+                >
+                  {submitting ? (
+                    <>
+                      <span className='w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin' />
+                      Mengirim...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className='w-5 h-5' />
+                      {hasProof(selectedTask)
+                        ? `Simpan Bukti Baru (${previewMedia.length} file)`
+                        : `Kirim Bukti (${previewMedia.length} file)`}
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

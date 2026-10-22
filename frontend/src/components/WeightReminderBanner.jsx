@@ -1,13 +1,5 @@
 import { Scale, ChevronRight, X } from "lucide-react";
 
-/**
- * Banner pengingat input berat badan harian.
- *
- * Props:
- *  - show      {boolean}  tampilkan banner
- *  - onCatat   {fn}       buka modal input
- *  - onDismiss {fn}       tutup/sembunyikan banner
- */
 export default function WeightReminderBanner({ show, onCatat, onDismiss }) {
   if (!show) return null;
 

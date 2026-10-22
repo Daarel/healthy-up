@@ -2,14 +2,6 @@ import prisma from '../lib/prisma.js';
 
 class HealthProfileService {
   static async createProfile(userId, profileData) {
-    const profileExists = await prisma.healthProfile.findUnique({
-      where: { userId },
-    });
-
-    if (profileExists) {
-      throw new Error('PROFILE_ALREADY_EXISTS');
-    }
-
     const heightInMeters = profileData.heightCm / 100;
 
     const calculatedBMI =
@@ -17,15 +9,20 @@ class HealthProfileService {
 
     const factualBMI = parseFloat(calculatedBMI.toFixed(2));
 
-    const newProfile = await prisma.healthProfile.create({
-      data: {
+    const savedProfile = await prisma.healthProfile.upsert({
+      where: { userId },
+      update: {
+        factualBMI,
+        ...profileData,
+      },
+      create: {
         userId,
         factualBMI,
         ...profileData,
       },
     });
 
-    return newProfile;
+    return savedProfile;
   }
 
   static async getCalorieLog(userId) {
@@ -102,64 +99,65 @@ class HealthProfileService {
     return newCalorieLog;
   }
 
-  static async getWeightLogs(userId, range) {
-    const endDate = new Date();
-    const startDate = new Date();
+  static getStartOfCurrentWeek() {
+    const now = new Date();
+    const day = now.getDay(); // 0 (Sun) - 6 (Sat)
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(now);
+    monday.setDate(now.getDate() + diffToMonday);
+    monday.setHours(0, 0, 0, 0);
+    return monday;
+  }
 
-    if (range === 'week') {
-      startDate.setDate(endDate.getDate() - 6);
-    } else if (range === 'month') {
-      startDate.setDate(endDate.getDate() - 29);
-    }
-    startDate.setHours(0, 0, 0, 0);
-    endDate.setHours(23, 59, 59, 999);
+  static async getWeightLogs(userId, range) {
+    const limit = range === 'week' ? 7 : 30;
 
     const rawLogs = await prisma.weightLog.findMany({
       where: {
         userId: userId,
-        loggedAt: {
-          gte: startDate,
-          lte: endDate,
-        },
       },
-      orderBy: { loggedAt: 'asc' },
+      orderBy: { loggedAt: 'desc' },
+      take: limit,
     });
 
-    const logMap = {};
-    rawLogs.forEach((log) => {
-      const dateString = log.loggedAt.toISOString().split('T')[0];
-      logMap[dateString] = log.weight;
-    });
+    // Urutkan kembali secara kronologis (terlama ke terbaru) untuk grafik & perhitungan selisih
+    const chronologicalLogs = rawLogs.reverse().map((log) => ({
+      id: log.id,
+      date: log.loggedAt.toISOString().split('T')[0],
+      loggedAt: log.loggedAt,
+      weight: log.weight,
+    }));
 
-    const filledLogs = [];
-    let currentDate = new Date(startDate);
-
-    while (currentDate <= endDate) {
-      const dateString = currentDate.toISOString().split('T')[0];
-
-      filledLogs.push({
-        date: dateString,
-        weight: logMap[dateString] || 0,
-      });
-
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-
-    return filledLogs;
+    return chronologicalLogs;
   }
 
   static async createWeightLogAndUpdateProfile(userId, weight) {
-    const [newWeightLog, updatedHealthProfile] = await prisma.$transaction([
+    const startOfWeek = HealthProfileService.getStartOfCurrentWeek();
+
+    const existingThisWeek = await prisma.weightLog.findFirst({
+      where: {
+        userId,
+        loggedAt: {
+          gte: startOfWeek,
+        },
+      },
+    });
+
+    if (existingThisWeek) {
+      throw new Error('WEIGHT_ALREADY_LOGGED_THIS_WEEK');
+    }
+
+    const [newWeightLog] = await prisma.$transaction([
       prisma.weightLog.create({
         data: { userId, weight },
       }),
-      prisma.healthProfile.update({
+      prisma.healthProfile.updateMany({
         where: { userId },
         data: { weightKg: weight },
       }),
     ]);
 
-    return { newWeightLog, updatedHealthProfile };
+    return { newWeightLog, updatedHealthProfile: { weightKg: weight } };
   }
 
   static async getMyProfile(userId) {

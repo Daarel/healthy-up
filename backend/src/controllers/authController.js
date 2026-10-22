@@ -22,7 +22,7 @@ class AuthController {
       const { username, email, password } = registerSchema.parse(req.body);
 
       const user = await AuthService.registerUser(username, email, password);
-      const token = generateToken(user.id, res);
+      const token = generateToken(user.id, res, user.role);
 
       res.status(201).json({
         status: 'success',
@@ -31,6 +31,7 @@ class AuthController {
             id: user.id,
             username: username,
             email: email,
+            role: user.role,
           },
           token,
         },
@@ -63,7 +64,7 @@ class AuthController {
       const { email, password } = loginSchema.parse(req.body);
 
       const user = await AuthService.loginUser(email, password);
-      const token = generateToken(user.id, res);
+      const token = generateToken(user.id, res, user.role);
 
       res.status(200).json({
         status: 'success',
@@ -72,6 +73,7 @@ class AuthController {
             id: user.id,
             username: user.username,
             email: user.email,
+            role: user.role,
           },
           token,
         },

@@ -154,7 +154,7 @@ class UserController {
       // 3. Tembak ke Cloudinary
       const uploadResponse = await cloudinary.uploader.upload(fileUrl, {
         folder: 'healthyup/profiles',
-        allowed_formats: ['jpg', 'png', 'jpeg'],
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
         transformation: [
           { width: 200, height: 200, crop: 'fill', gravity: 'face' },
         ],

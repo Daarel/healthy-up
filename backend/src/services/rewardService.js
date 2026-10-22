@@ -3,8 +3,8 @@ import crypto from 'crypto';
 import prisma from '../lib/prisma.js';
 
 class RewardService {
-  static async getActiveRewards(categoryQuery) {
-    const whereClause = { isActive: true };
+  static async getActiveRewards(categoryQuery, includeInactive = false) {
+    const whereClause = includeInactive ? {} : { isActive: true };
 
     if (categoryQuery && categoryQuery.toLowerCase() !== 'semua') {
       whereClause.category = categoryQuery.toLowerCase();
@@ -12,7 +12,7 @@ class RewardService {
 
     const rewards = await prisma.reward.findMany({
       where: whereClause,
-      orderBy: { pointsCost: 'asc' },
+      orderBy: includeInactive ? { createdAt: 'desc' } : { pointsCost: 'asc' },
     });
 
     return rewards;

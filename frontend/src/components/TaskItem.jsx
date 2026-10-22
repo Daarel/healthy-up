@@ -1,14 +1,5 @@
 import { Check, CheckCircle2, Circle } from "lucide-react";
 
-/**
- * Satu baris tugas di daftar "Tugas Hari Ini".
- *
- * Props:
- *  - title     {string}
- *  - category  {string}
- *  - completed {boolean}
- *  - Icon      {ComponentType}  ikon lucide-react untuk tugas ini
- */
 export default function TaskItem({ title, category, completed, Icon, onToggle }) {
   return (
     <div

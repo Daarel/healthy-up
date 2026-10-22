@@ -1,25 +1,13 @@
 import { useState } from "react";
 import { Scale, X } from "lucide-react";
 
-/**
- * Modal input berat badan yang dapat digunakan di Dashboard maupun Profil.
- *
- * Props:
- *  - isOpen          {boolean}  tampilkan modal
- *  - onClose         {fn}       dipanggil saat modal ditutup
- *  - onSuccess       {fn(value, note)}  dipanggil setelah simpan berhasil
- *  - currentWeight   {number}   berat terakhir (untuk placeholder & perbandingan)
- *  - targetWeight    {number|null}  target berat (opsional, tampil di info box)
- *  - allowNote       {boolean}  tampilkan field catatan (default false)
- *  - allowMultiplePerDay {boolean}  izinkan input lebih dari sekali sehari (default false)
- */
 export default function WeightInputModal({
   isOpen,
   onClose,
   onSuccess,
   currentWeight,
   targetWeight = null,
-  allowNote = false,
+  allowNote: _allowNote = false,
   allowMultiplePerDay = false,
 }) {
   const [weightInput, setWeightInput] = useState("");

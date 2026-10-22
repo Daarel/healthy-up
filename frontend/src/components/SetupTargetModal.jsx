@@ -11,6 +11,14 @@ import {
   Footprints,
   Moon,
   UtensilsCrossed,
+  Brain,
+  Dumbbell,
+  Activity,
+  Flame,
+  Heart,
+  Wind,
+  Bike,
+  Salad,
   Star,
   User,
   UserCircle2,
@@ -18,14 +26,50 @@ import {
   Plus,
 } from "lucide-react";
 
-// Tugas harian yang "di-generate AI"
-const AI_DAILY_TASKS = [
-  { id: 1, title: "Minum air 8 gelas",   category: "Hidrasi",   points: 10, Icon: Droplets,        iconColor: "text-blue-500"   },
-  { id: 2, title: "Makan sayur 3 porsi", category: "Nutrisi",   points: 15, Icon: Apple,           iconColor: "text-green-600"  },
-  { id: 3, title: "Jalan kaki 30 menit", category: "Olahraga",  points: 20, Icon: Footprints,      iconColor: "text-orange-500" },
-  { id: 4, title: "Tidur 8 jam",         category: "Istirahat", points: 10, Icon: Moon,            iconColor: "text-purple-500" },
-  { id: 5, title: "Sarapan bergizi",     category: "Nutrisi",   points: 15, Icon: UtensilsCrossed, iconColor: "text-yellow-600" },
-];
+const ICON_MAP = {
+  brain: Brain,
+  "biceps-flexed": Dumbbell,
+  dumbbell: Dumbbell,
+  utensils: UtensilsCrossed,
+  apple: Apple,
+  footprints: Footprints,
+  moon: Moon,
+  droplets: Droplets,
+  flame: Flame,
+  heart: Heart,
+  wind: Wind,
+  bike: Bike,
+  salad: Salad,
+};
+
+const CATEGORY_ICON_MAP = {
+  mental: Brain,
+  nutrition: UtensilsCrossed,
+  physical: Dumbbell,
+};
+
+const CATEGORY_ICON_COLOR = {
+  mental: "text-purple-500",
+  nutrition: "text-green-600",
+  physical: "text-orange-500",
+};
+
+function resolveTaskIconAndColor(task) {
+  if (task.Icon) {
+    return {
+      Icon: task.Icon,
+      iconColor: task.iconColor || "text-[#006e2f]",
+    };
+  }
+  const cat = task.category?.toLowerCase();
+  const iconKey = task.icon?.toLowerCase();
+  const Icon =
+    (iconKey && iconKey !== "activity" ? ICON_MAP[iconKey] : null) ||
+    CATEGORY_ICON_MAP[cat] ||
+    Activity;
+  const iconColor = CATEGORY_ICON_COLOR[cat] || task.iconColor || "text-[#006e2f]";
+  return { Icon, iconColor };
+}
 
 const AI_TYPING_LINES = [
   "Menganalisis data kesehatanmu...",
@@ -35,21 +79,6 @@ const AI_TYPING_LINES = [
   "Rencanamu siap!",
 ];
 
-/**
- * Modal 5 langkah:
- *  1. personal   — data pribadi (gender, usia, tinggi, berat)
- *  2. bmi        — tampil BMI placeholder + gauge
- *  3. target     — slider target berat badan
- *  4. generating — animasi AI
- *  5. preview    — preview tugas → konfirmasi
- *
- * Props:
- *  - isOpen        {boolean}
- *  - onClose       {fn}
- *  - initialWeight {number}  berat dari localStorage (0 jika belum ada)
- *  - initialTarget {number}  target dari localStorage (0 jika belum ada)
- *  - onConfirm     {fn({ gender, age, height, currentWeight, targetWeight, tasks })}
- */
 export default function SetupTargetModal({
   isOpen,
   onClose,
@@ -59,7 +88,8 @@ export default function SetupTargetModal({
 }) {
   // ── Step state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState("personal");
-  const [realTasks, setRealTasks] = useState(AI_DAILY_TASKS);
+  const [realTasks, setRealTasks] = useState([]);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
 
   // ── Step 1: personal ────────────────────────────────────────────────────
   const [gender, setGender] = useState("");
@@ -84,6 +114,8 @@ export default function SetupTargetModal({
       setWeight(initialWeight || 70);
       setTargetWeight(initialTarget || Math.max(30, (initialWeight || 70) - 5));
       setTypingIndex(0);
+      setRealTasks([]);
+      setIsLoadingTasks(false);
     }
   }
 
@@ -117,8 +149,10 @@ export default function SetupTargetModal({
 
   const handleConfirm = async () => {
     setTypingIndex(0);
+    setRealTasks([]);
+    setIsLoadingTasks(true);
     setStep("generating");
-    const confirmData = { gender, age, height, currentWeight: weight, targetWeight, tasks: AI_DAILY_TASKS };
+    const confirmData = { gender, age, height, currentWeight: weight, targetWeight, tasks: [] };
     try {
       const generatedTasks = await onConfirm(confirmData);
       if (generatedTasks && generatedTasks.length > 0) {
@@ -126,6 +160,8 @@ export default function SetupTargetModal({
       }
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoadingTasks(false);
     }
   };
 
@@ -156,10 +192,6 @@ export default function SetupTargetModal({
     bmiColorClass = "text-red-500";
     gaugePosition = 60 + Math.min(40, ((numBmi - 30) / 15) * 40);
   }
-
-  // ── Progress dots ────────────────────────────────────────────────────────
-  const STEPS = ["personal", "bmi", "target", "generating", "preview"];
-  const stepIdx = STEPS.indexOf(step);
 
   return (
     <div
@@ -492,25 +524,35 @@ export default function SetupTargetModal({
                 Tugas Minggu Ini
               </p>
               <div className="bg-[#f8f9ff] rounded-2xl border border-[#e5eeff] overflow-hidden">
-                {realTasks.map((task, i) => {
-                  const Icon = task.Icon || Sparkle;
-                  const iconColor = task.iconColor || "text-[#006e2f]";
-                  return (
-                  <div key={task.id} className={`flex items-center gap-3 px-4 py-3 ${
-                    i < realTasks.length - 1 ? "border-b border-[#e5eeff]" : ""
-                  }`}>
-                    <Icon className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#191c20] font-jakarta truncate">{task.title}</p>
-                      <p className="text-xs text-[#6d7b6c] font-jakarta">{task.category}</p>
-                    </div>
-                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full flex-shrink-0">
-                      <Star className="w-3 h-3 text-yellow-500" />
-                      <span className="text-xs font-semibold text-yellow-700 font-lexend">+{task.pointsReward || task.points || 0}</span>
-                    </div>
+                {isLoadingTasks || realTasks.length === 0 ? (
+                  <div className="p-3 space-y-2">
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="h-10 w-full rounded-xl bg-gray-200 animate-pulse"
+                      />
+                    ))}
                   </div>
-                  );
-                })}
+                ) : (
+                  realTasks.map((task, i) => {
+                    const { Icon, iconColor } = resolveTaskIconAndColor(task);
+                    return (
+                      <div key={task.id} className={`flex items-center gap-3 px-4 py-3 ${
+                        i < realTasks.length - 1 ? "border-b border-[#e5eeff]" : ""
+                      }`}>
+                        <Icon className={`w-4 h-4 flex-shrink-0 ${iconColor}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#191c20] font-jakarta truncate">{task.title}</p>
+                          <p className="text-xs text-[#6d7b6c] font-jakarta">{task.category}</p>
+                        </div>
+                        <div className="flex items-center gap-1 bg-yellow-50 px-2 py-0.5 rounded-full flex-shrink-0">
+                          <Star className="w-3 h-3 text-yellow-500" />
+                          <span className="text-xs font-semibold text-yellow-700 font-lexend">+{task.pointsReward || task.points || 0}</span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
 
@@ -519,10 +561,6 @@ export default function SetupTargetModal({
             </p>
 
             <div className="flex gap-3 px-6 pb-6">
-              <button type="button" onClick={() => setStep("target")}
-                className="flex-1 py-3 border-2 border-[#c1c9bf] text-[#6d7b6c] rounded-xl font-semibold font-jakarta hover:bg-[#f8f9ff] transition-colors">
-                Ubah Target
-              </button>
               <button type="button" onClick={onClose}
                 className="flex-1 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-jakarta hover:bg-[#005425] transition-colors flex items-center justify-center gap-2">
                 Mulai Sekarang
