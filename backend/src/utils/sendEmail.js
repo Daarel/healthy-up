@@ -1,8 +1,15 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendClient = null;
+const getResendClient = () => {
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY || 're_placeholder');
+  }
+  return resendClient;
+};
 
 export const sendEmail = async ({ email, subject, message, htmlMessage }) => {
+  const resend = getResendClient();
   const { error } = await resend.emails.send({
     from: 'HealthyUp <onboarding@resend.dev>',
     to: email,
