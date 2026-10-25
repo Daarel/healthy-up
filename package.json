@@ -10,10 +10,10 @@
     "dev": "concurrently -n \"FRONTEND,BACKEND\" -c \"cyan,blue\" \"npm run dev --workspace=frontend\" \"npm run dev --workspace=backend\"",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
-    "build": "npm run prisma:generate --workspace=backend",
+    "build": "npm run build:frontend",
     "build:backend": "npm run prisma:generate --workspace=backend",
     "build:frontend": "npm run build --workspace=frontend",
-    "postinstall": "npm run prisma:generate --workspace=backend"
+    "postinstall": "npm run prisma:generate --workspace=backend || true"
   },
   "devDependencies": {
     "concurrently": "^10.0.6"
