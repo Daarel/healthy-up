@@ -1,0 +1,2811 @@
+export const swaggerDocument = {
+  "openapi": "3.0.0",
+  "info": {
+    "title": "HealthyUp API Documentation",
+    "description": "Dokumentasi RESTful API untuk aplikasi HealthyUp (Capstone Project)",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "https://healthy-up-production.up.railway.app"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Endpoint untuk autentikasi pengguna"
+    },
+    {
+      "name": "Health Profiles",
+      "description": "Endpoint untuk manajemen profil kesehatan dan log berat badan"
+    },
+    {
+      "name": "Users",
+      "description": "Endpoint untuk manajemen data dan akun pengguna"
+    },
+    {
+      "name": "Rewards",
+      "description": "Endpoint untuk manajemen reward yang aktif dan telah diklaim dengan kode redeem"
+    },
+    {
+      "name": "Missions",
+      "description": "Endpoint untuk pengguna dan admin (menyelesaikan misi, cek progress)"
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Mendaftarkan akun pengguna baru",
+        "description": "Endpoint untuk membuat akun baru. Memerlukan username unik dan email yang belum terdaftar.",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "username",
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 100,
+                    "example": "daarel"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 70,
+                    "example": "daarel@student.upj.ac.id"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "maxLength": 30,
+                    "example": "SandiKuat123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Akun berhasil dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "username": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "token": {
+                          "type": "string",
+                          "description": "JWT Bearer token"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi gagal (Zod) atau data sudah terdaftar (Email/Username)",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ValidationError": {
+                    "value": {
+                      "status": "fail",
+                      "errors": [
+                        {
+                          "field": "email",
+                          "message": "Email maksimal 70 karakter"
+                        }
+                      ]
+                    }
+                  },
+                  "ConflictError": {
+                    "value": {
+                      "status": "error",
+                      "message": "Username sudah digunakan, silakan pilih nama lain"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Terjadi kesalahan pada server"
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Masuk ke akun pengguna",
+        "description": "Autentikasi pengguna menggunakan email dan password untuk mendapatkan JWT.",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "daarel@student.upj.ac.id"
+                  },
+                  "password": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "SandiKuat123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Berhasil login",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "username": {
+                              "type": "string"
+                            },
+                            "email": {
+                              "type": "string"
+                            }
+                          }
+                        },
+                        "token": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi input gagal (Zod)"
+          },
+          "401": {
+            "description": "Kredensial tidak valid (Email atau Password salah)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid email and password"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Terjadi kesalahan pada server"
+          }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "summary": "Keluar dari akun pengguna",
+        "description": "Menghapus sesi pengguna dengan membersihkan cookie JWT.",
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil logout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "berhasil log out"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Terjadi kesalahan pada server"
+          }
+        }
+      }
+    },
+    "/auth/forgot-password": {
+      "post": {
+        "summary": "Meminta kode OTP untuk reset password",
+        "description": "Menghasilkan kode OTP 6 digit dan mengirimkannya ke email pengguna. Berlaku selama 5 menit.",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "daarel@student.upj.ac.id"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Permintaan diproses (pesan sukses akan selalu sama demi keamanan, meskipun email tidak ada)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Jika email terdaftar di sistem kami, kode OTP telah dikirimkan"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi format email gagal"
+          },
+          "500": {
+            "description": "Gagal mengirim email (SMTP Error)"
+          }
+        }
+      }
+    },
+    "/auth/reset-password": {
+      "post": {
+        "summary": "Memverifikasi OTP dan mengganti password",
+        "description": "Menggunakan kode OTP yang diterima dari email untuk mengatur ulang password baru.",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "otp",
+                  "newPassword",
+                  "confirmedPassword"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "daarel@student.upj.ac.id"
+                  },
+                  "otp": {
+                    "type": "string",
+                    "description": "Kode OTP 6 digit",
+                    "example": "123456"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "minLength": 8,
+                    "maxLength": 30,
+                    "example": "PasswordBaru123!"
+                  },
+                  "confirmedPassword": {
+                    "type": "string",
+                    "format": "password",
+                    "example": "PasswordBaru123!"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password berhasil diubah",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Password has successfully changed"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi gagal (Zod) atau OTP bermasalah",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ZodError": {
+                    "value": {
+                      "status": "fail",
+                      "errors": [
+                        {
+                          "field": "confirmedPassword",
+                          "message": "Password dan konfirmasi password tidak cocok"
+                        }
+                      ]
+                    }
+                  },
+                  "InvalidOTP": {
+                    "value": {
+                      "status": "error",
+                      "message": "Invalid or missing OTP"
+                    }
+                  },
+                  "IncorrectOTP": {
+                    "value": {
+                      "status": "error",
+                      "message": "Incorrect OTP code"
+                    }
+                  },
+                  "ExpiredOTP": {
+                    "value": {
+                      "status": "error",
+                      "message": "OTP has expired. Please request a new one."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Terjadi kesalahan pada server"
+          }
+        }
+      }
+    },
+    "/auth/resend-otp": {
+      "post": {
+        "summary": "Mengirim ulang kode OTP",
+        "description": "Menghasilkan kode OTP baru jika kode sebelumnya kedaluwarsa atau tidak masuk ke email.",
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "daarel@student.upj.ac.id"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OTP baru berhasil dikirim",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Kode OTP baru telah berhasil dikirimkan ke email Anda"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi format email gagal"
+          },
+          "500": {
+            "description": "Gagal mengirim email OTP"
+          }
+        }
+      }
+    },
+    "/health-profiles/": {
+      "get": {
+        "summary": "Mendapatkan profil kesehatan pengguna",
+        "description": "Mengambil data metrik profil kesehatan milik pengguna yang sedang login, seperti berat badan terkini, target berat badan, dan BMI faktual hasil analisis AI.",
+        "tags": [
+          "Health Profiles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil detail profil kesehatan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "profile": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "example": "987fcdeb-51a2-43d7-9012-34567890abcd"
+                            },
+                            "userId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "gender": {
+                              "type": "string",
+                              "enum": [
+                                "male",
+                                "female"
+                              ],
+                              "example": "male"
+                            },
+                            "age": {
+                              "type": "integer",
+                              "example": 21
+                            },
+                            "factualBMI": {
+                              "type": "number",
+                              "format": "float",
+                              "example": 22.5
+                            },
+                            "weightKg": {
+                              "type": "number",
+                              "format": "float",
+                              "example": 65
+                            },
+                            "heightCm": {
+                              "type": "number",
+                              "format": "float",
+                              "example": 170
+                            },
+                            "goalWeight": {
+                              "type": "number",
+                              "format": "float",
+                              "example": 60
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time",
+                              "example": "2026-06-01T10:30:00.000Z"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token (Unauthorized)"
+          },
+          "404": {
+            "description": "Data profil kesehatan belum diisi oleh pengguna",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Profil kesehatan belum dibuat"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Terjadi kesalahan internal pada server"
+          }
+        }
+      },
+      "post": {
+        "summary": "Membuat profil kesehatan pengguna baru",
+        "description": "Menyimpan data metrik fisik pengguna (usia, gender, tinggi, berat badan, target) dan secara otomatis menghitung nilai Factual BMI di sisi server. Endpoint ini dirancang khusus untuk pendaftaran pertama kali dan hanya bisa diakses satu kali per pengguna.",
+        "tags": [
+          "Health Profiles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "gender",
+                  "age",
+                  "heightCm",
+                  "weightKg",
+                  "goalWeight"
+                ],
+                "properties": {
+                  "gender": {
+                    "type": "string",
+                    "enum": [
+                      "male",
+                      "female"
+                    ],
+                    "description": "Jenis kelamin pengguna",
+                    "example": "male"
+                  },
+                  "age": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 120,
+                    "description": "Usia pengguna dalam hitungan tahun",
+                    "example": 21
+                  },
+                  "heightCm": {
+                    "type": "number",
+                    "format": "float",
+                    "minimum": 50,
+                    "maximum": 250,
+                    "description": "Tinggi badan pengguna dalam sentimeter",
+                    "example": 170
+                  },
+                  "weightKg": {
+                    "type": "number",
+                    "format": "float",
+                    "minimum": 10,
+                    "maximum": 300,
+                    "description": "Berat badan pengguna saat ini dalam kilogram",
+                    "example": 65
+                  },
+                  "goalWeight": {
+                    "type": "number",
+                    "format": "float",
+                    "minimum": 10,
+                    "maximum": 300,
+                    "description": "Target berat badan pengguna dalam kilogram",
+                    "example": 60
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Profil kesehatan berhasil disimpan dan BMI berhasil dihitung",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Profil kesehatan berhasil disimpan"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "profile": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid",
+                              "example": "a1b2c3d4-e5f6-7890-1234-56789abcdef0"
+                            },
+                            "userId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "gender": {
+                              "type": "string",
+                              "example": "male"
+                            },
+                            "age": {
+                              "type": "integer",
+                              "example": 21
+                            },
+                            "factualBMI": {
+                              "type": "number",
+                              "format": "float",
+                              "description": "Hasil perhitungan otomatis dari backend",
+                              "example": 22.49
+                            },
+                            "weightKg": {
+                              "type": "number",
+                              "format": "float",
+                              "example": 65
+                            },
+                            "heightCm": {
+                              "type": "number",
+                              "format": "float",
+                              "example": 170
+                            },
+                            "goalWeight": {
+                              "type": "number",
+                              "format": "float",
+                              "example": 60
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi Zod gagal atau profil sudah pernah dibuat",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "ProfileAlreadyExists": {
+                    "value": {
+                      "status": "error",
+                      "message": "Profil kesehatan untuk pengguna ini sudah ada"
+                    }
+                  },
+                  "ValidationError": {
+                    "value": {
+                      "status": "fail",
+                      "errors": [
+                        {
+                          "field": "weightKg",
+                          "message": "Berat badan wajib diisi"
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token (Unauthorized)"
+          },
+          "500": {
+            "description": "Terjadi kesalahan internal pada server"
+          }
+        }
+      }
+    },
+    "/health-profiles/calories-logs": {
+      "get": {
+        "summary": "Mendapatkan ringkasan kalori harian dan mingguan",
+        "description": "Menampilkan total kalori terbakar (dari misi) dan kalori masuk (dari asupan makanan) untuk hari ini dan minggu ini, beserta target berat badan pengguna.",
+        "tags": [
+          "Health Profiles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil data ringkasan kalori",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "caloriesBurned": {
+                          "type": "object",
+                          "properties": {
+                            "today": {
+                              "type": "integer",
+                              "example": 350
+                            },
+                            "weekly": {
+                              "type": "integer",
+                              "example": 1200
+                            }
+                          }
+                        },
+                        "caloriesIntake": {
+                          "type": "object",
+                          "properties": {
+                            "today": {
+                              "type": "integer",
+                              "example": 1500
+                            },
+                            "weekly": {
+                              "type": "integer",
+                              "example": 8500
+                            }
+                          }
+                        },
+                        "profile": {
+                          "type": "object",
+                          "properties": {
+                            "goalWeight": {
+                              "type": "number",
+                              "example": 65
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token"
+          },
+          "500": {
+            "description": "Gagal mengambil data dashboard summary"
+          }
+        }
+      }
+    },
+    "/health-profiles/weight-logs": {
+      "get": {
+        "summary": "Mendapatkan grafik riwayat berat badan pengguna",
+        "description": "Mengambil data historis berat badan pengguna untuk divisualisasikan. Mendukung rentang 1 minggu atau 1 bulan terakhir. Jika pada suatu hari pengguna tidak menginput data, sistem akan mengembalikan tanggal tersebut dengan nilai `weight` 0.",
+        "tags": [
+          "Health Profiles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "range",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "week",
+                "month"
+              ],
+              "default": "week"
+            },
+            "description": "Rentang waktu penarikan data log. Pilih 'week' untuk 7 hari terakhir atau 'month' untuk 30 hari terakhir."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil riwayat berat badan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "totalDays": {
+                          "type": "integer",
+                          "example": 7
+                        },
+                        "weightLogs": {
+                          "type": "array",
+                          "description": "Daftar historis yang sudah diurutkan dari tanggal terlama hingga hari ini tanpa ada hari yang terlewat.",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "date": {
+                                "type": "string",
+                                "format": "date",
+                                "example": "2026-05-25"
+                              },
+                              "weight": {
+                                "type": "number",
+                                "format": "float",
+                                "example": 64.5
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parameter query range tidak valid (Bukan 'week' atau 'month')"
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token"
+          },
+          "500": {
+            "description": "Terjadi kesalahan pada server saat mengambil data log"
+          }
+        }
+      },
+      "post": {
+        "summary": "Mencatat berat badan harian",
+        "description": "Menambahkan riwayat berat badan harian pengguna, dan secara otomatis memperbarui berat badan di tabel Profil Kesehatan utama.",
+        "tags": [
+          "Health Profiles"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "weight"
+                ],
+                "properties": {
+                  "weight": {
+                    "type": "number",
+                    "format": "float",
+                    "minimum": 20,
+                    "maximum": 200,
+                    "example": 68.5
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Berat badan berhasil dicatat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Berat badan berhasil dicatat dan profil kesehatan telah diperbarui!"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "weightLog": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "userId": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "weight": {
+                              "type": "number",
+                              "format": "float"
+                            }
+                          }
+                        },
+                        "currentWeight": {
+                          "type": "number",
+                          "format": "float"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi input gagal (Zod)"
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token"
+          },
+          "404": {
+            "description": "Profil kesehatan belum dibuat untuk pengguna ini",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Profil kesehatan belum dibuat untuk pengguna ini."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Terjadi kesalahan pada server saat memproses transaksi"
+          }
+        }
+      }
+    },
+    "/users/all-users": {
+      "get": {
+        "summary": "Mendapatkan seluruh data pengguna (Admin Only)",
+        "description": "Mengambil daftar seluruh pengguna di platform dengan fitur paginasi. Hanya dapat diakses oleh peran Admin.",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "description": "Nomor halaman"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1
+            },
+            "description": "Jumlah data per halaman"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil daftar pengguna",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "users": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "username": {
+                                "type": "string"
+                              },
+                              "email": {
+                                "type": "string",
+                                "format": "email"
+                              },
+                              "rankTitle": {
+                                "type": "string"
+                              },
+                              "level": {
+                                "type": "integer"
+                              },
+                              "streakCount": {
+                                "type": "integer"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        },
+                        "pagination": {
+                          "type": "object",
+                          "properties": {
+                            "totalData": {
+                              "type": "integer"
+                            },
+                            "totalPages": {
+                              "type": "integer"
+                            },
+                            "currentPage": {
+                              "type": "integer"
+                            },
+                            "limit": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Format query page/limit tidak valid"
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token"
+          },
+          "403": {
+            "description": "Akses ditolak (Bukan Admin)"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "delete": {
+        "summary": "Menghapus akun pengguna tertentu (Admin Only)",
+        "description": "Menghapus seluruh data pengguna berdasarkan ID yang diberikan. Admin tidak dapat menghapus akunnya sendiri melalui rute ini.",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "UUID dari pengguna yang akan dihapus"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Akun berhasil dihapus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Akun pengguna tersebut beserta seluruh datanya telah berhasil dihapus."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi UUID gagal atau Admin mencoba menghapus akunnya sendiri"
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token"
+          },
+          "403": {
+            "description": "Akses ditolak (Bukan Admin)"
+          },
+          "404": {
+            "description": "Pengguna yang ingin dihapus tidak ditemukan"
+          },
+          "500": {
+            "description": "Terjadi kesalahan saat admin menghapus akun"
+          }
+        }
+      }
+    },
+    "/users/user": {
+      "get": {
+        "summary": "Mendapatkan informasi profil pengguna",
+        "description": "Mengambil data profil lengkap pengguna yang sedang login, termasuk level, EXP, lencana (badges), dan gelar peringkat (rank title).",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil data profil",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "username": {
+                              "type": "string",
+                              "example": "daarel"
+                            },
+                            "email": {
+                              "type": "string",
+                              "format": "email",
+                              "example": "daarel@student.upj.ac.id"
+                            },
+                            "rankTitle": {
+                              "type": "string",
+                              "example": "pemula"
+                            },
+                            "level": {
+                              "type": "integer",
+                              "example": 3
+                            },
+                            "experiencePoints": {
+                              "type": "integer",
+                              "example": 2500
+                            },
+                            "rewardPoints": {
+                              "type": "integer",
+                              "example": 150
+                            },
+                            "streakCount": {
+                              "type": "integer",
+                              "example": 5
+                            },
+                            "profilePicture": {
+                              "type": "string",
+                              "format": "uri"
+                            },
+                            "badges": {
+                              "type": "array",
+                              "description": "Kumpulan lencana milestone (kelipatan level 10)",
+                              "items": {
+                                "type": "string",
+                                "enum": [
+                                  "LEVEL_10",
+                                  "LEVEL_20",
+                                  "LEVEL_30"
+                                ]
+                              },
+                              "example": [
+                                "LEVEL_10",
+                                "LEVEL_20"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token"
+          },
+          "404": {
+            "description": "Pengguna tidak ditemukan di database"
+          },
+          "500": {
+            "description": "Terjadi kesalahan saat mengambil profil"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Menghapus akun secara mandiri",
+        "description": "Menghapus seluruh data pengguna yang sedang login dari database secara kaskade dan membersihkan sesi (cookie JWT).",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Akun berhasil dihapus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Akun dan seluruh data Anda telah dihapus secara permanen."
+                    },
+                    "action": {
+                      "type": "string",
+                      "example": "redirect_to_login"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token"
+          },
+          "500": {
+            "description": "Terjadi kesalahan saat menghapus akun"
+          }
+        }
+      }
+    },
+    "/users/profile/picture": {
+      "patch": {
+        "summary": "Memperbarui foto profil pengguna",
+        "description": "Mengubah URL foto profil pengguna. URL harus berupa tautan gambar yang valid.",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "profilePicture"
+                ],
+                "properties": {
+                  "profilePicture": {
+                    "type": "string",
+                    "format": "uri",
+                    "example": "https://ui-avatars.com/api/?name=Daarel+Safa"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Foto profil berhasil diperbarui",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Foto profil berhasil diperbarui"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "username": {
+                              "type": "string"
+                            },
+                            "profilePicture": {
+                              "type": "string",
+                              "format": "uri"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi gagal (URL tidak valid)"
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token"
+          },
+          "500": {
+            "description": "Gagal memperbarui foto profil"
+          }
+        }
+      }
+    },
+    "/users/user/level-up": {
+      "post": {
+        "summary": "Memproses kenaikan level pengguna (Level Up)",
+        "description": "Mengevaluasi EXP pengguna saat ini. Jika mencukupi, level akan naik. Proses ini juga menangani pemberian lencana setiap kelipatan 10 level hingga maksimal Level 30.",
+        "tags": [
+          "Users"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil naik level",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Selamat! Anda berhasil naik ke Level 10 dan Anda mendapatkan lencana baru!"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "username": {
+                              "type": "string"
+                            },
+                            "level": {
+                              "type": "integer",
+                              "example": 10
+                            },
+                            "rankTitle": {
+                              "type": "string",
+                              "example": "pejuang_sehat"
+                            },
+                            "experiencePoints": {
+                              "type": "integer",
+                              "description": "Sisa EXP setelah dikurangi biaya naik level"
+                            },
+                            "badges": {
+                              "type": "array",
+                              "items": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Gagal naik level karena EXP kurang atau sudah mencapai level maksimum",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "InsufficientExp": {
+                    "value": {
+                      "status": "error",
+                      "message": "EXP Anda belum cukup untuk naik level"
+                    }
+                  },
+                  "MaxLevelReached": {
+                    "value": {
+                      "status": "error",
+                      "message": "Anda sudah mencapai level maksimal (Level 30). Terus pertahankan gaya hidup sehat Anda!"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid atau tidak ada token"
+          },
+          "404": {
+            "description": "Pengguna tidak ditemukan"
+          },
+          "500": {
+            "description": "Gagal memproses kenaikan level"
+          }
+        }
+      }
+    },
+    "/rewards": {
+      "get": {
+        "summary": "Mendapatkan daftar katalog reward aktif",
+        "description": "Mengambil semua reward yang tersedia untuk ditukarkan (isActive true), diurutkan dari poin termurah. Mendukung filter berdasarkan kategori.",
+        "tags": [
+          "Rewards"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "category",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter katalog berdasarkan kategori (contoh 'kesehatan', 'makanan', 'gym'). Kosongkan atau isi 'semua' untuk melihat semua kategori."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil daftar reward",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "rewards": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "name": {
+                                "type": "string",
+                                "example": "Voucher Mie Gacoan Rp 50.000"
+                              },
+                              "category": {
+                                "type": "string",
+                                "example": "makanan"
+                              },
+                              "pointsCost": {
+                                "type": "integer",
+                                "example": 500
+                              },
+                              "stockQuantity": {
+                                "type": "integer",
+                                "example": 20
+                              },
+                              "isActive": {
+                                "type": "boolean",
+                                "example": true
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid atau belum login"
+          },
+          "500": {
+            "description": "Terjadi kesalahan pada server"
+          }
+        }
+      },
+      "post": {
+        "summary": "Membuat katalog reward baru (Admin Only)",
+        "description": "Menambahkan reward baru ke dalam sistem. Hanya dapat diakses oleh Admin.",
+        "tags": [
+          "Rewards"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "category",
+                  "pointsCost",
+                  "stockQuantity"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 255,
+                    "example": "Voucher Gym 1 Bulan"
+                  },
+                  "category": {
+                    "type": "string",
+                    "example": "gym"
+                  },
+                  "pointsCost": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1000
+                  },
+                  "stockQuantity": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 15
+                  },
+                  "isActive": {
+                    "type": "boolean",
+                    "default": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Reward berhasil dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Katalog reward baru berhasil ditambahkan!"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "reward": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "name": {
+                              "type": "string"
+                            },
+                            "category": {
+                              "type": "string"
+                            },
+                            "pointsCost": {
+                              "type": "integer"
+                            },
+                            "stockQuantity": {
+                              "type": "integer"
+                            },
+                            "isActive": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi input gagal (Zod)"
+          },
+          "401": {
+            "description": "Sesi tidak valid atau belum login"
+          },
+          "403": {
+            "description": "Akses ditolak (Bukan Admin)"
+          },
+          "500": {
+            "description": "Terjadi kesalahan pada server"
+          }
+        }
+      }
+    },
+    "/rewards/my-rewards": {
+      "get": {
+        "summary": "Melihat daftar kupon milik pengguna (My Rewards)",
+        "description": "Mengambil histori penukaran kupon milik pengguna yang sedang login. Mendukung filter status.",
+        "tags": [
+          "Rewards"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "used",
+                "all"
+              ],
+              "default": "all"
+            },
+            "description": "Filter status kupon. 'active' untuk kupon yang belum dihanguskan, 'used' untuk riwayat terpakai, atau 'all' untuk semua."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil daftar kupon pengguna",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "example": 2
+                        },
+                        "myRewards": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "userId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "rewardId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "redemptionCode": {
+                                "type": "string",
+                                "example": "HLTY-8F2A1B"
+                              },
+                              "redeemedAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "isUsed": {
+                                "type": "boolean",
+                                "example": false
+                              },
+                              "usedAt": {
+                                "type": "string",
+                                "format": "date-time",
+                                "nullable": true
+                              },
+                              "reward": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string",
+                                    "example": "Voucher Mie Gacoan Rp 50.000"
+                                  },
+                                  "pointsCost": {
+                                    "type": "integer",
+                                    "example": 500
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Format query status tidak valid"
+          },
+          "401": {
+            "description": "Sesi tidak valid atau belum login"
+          },
+          "500": {
+            "description": "Gagal mengambil daftar kupon"
+          }
+        }
+      }
+    },
+    "/rewards/claim": {
+      "post": {
+        "summary": "Mengklaim atau menukarkan poin dengan kupon",
+        "description": "Membeli kupon menggunakan poin. Sistem akan memvalidasi sisa stok dan kecukupan poin. Jika berhasil, akan menghasilkan redemptionCode (kode unik).",
+        "tags": [
+          "Rewards"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "rewardId"
+                ],
+                "properties": {
+                  "rewardId": {
+                    "type": "string",
+                    "format": "uuid",
+                    "example": "123e4567-e89b-12d3-a456-426614174000"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Berhasil menukarkan kupon",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Berhasil menukarkan kupon: Voucher Mie Gacoan Rp 50.000"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "redemptionCode": {
+                          "type": "string",
+                          "example": "HLTY-8F2A1B"
+                        },
+                        "remainingPoints": {
+                          "type": "integer",
+                          "example": 1500
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Stok habis atau poin pengguna tidak mencukupi",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "OutOfStock": {
+                    "value": {
+                      "status": "error",
+                      "message": "Maaf, kupon ini sudah habis atau tidak aktif"
+                    }
+                  },
+                  "InsufficientPoints": {
+                    "value": {
+                      "status": "error",
+                      "message": "Poin Anda tidak cukup untuk menukarkan kupon ini"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid atau belum login"
+          },
+          "404": {
+            "description": "Katalog kupon tidak ditemukan"
+          },
+          "500": {
+            "description": "Gagal memproses klaim kupon"
+          }
+        }
+      }
+    },
+    "/rewards/verify": {
+      "post": {
+        "summary": "Memverifikasi dan menghanguskan kupon di toko fisik",
+        "description": "Kasir atau pengguna memasukkan kode penukaran. Sistem mengecek validitas dan status kupon. Jika valid, status isUsed akan diubah menjadi true.",
+        "tags": [
+          "Rewards"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "redemptionCode"
+                ],
+                "properties": {
+                  "redemptionCode": {
+                    "type": "string",
+                    "minLength": 5,
+                    "example": "HLTY-8F2A1B"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kupon berhasil diverifikasi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Kupon berhasil diverifikasi dan dihanguskan!"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "rewardName": {
+                          "type": "string",
+                          "example": "Voucher Mie Gacoan Rp 50.000"
+                        },
+                        "username": {
+                          "type": "string",
+                          "example": "daarel"
+                        },
+                        "redemptionCode": {
+                          "type": "string",
+                          "example": "HLTY-8F2A1B"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi Zod gagal atau kupon sudah pernah dipakai",
+            "content": {
+              "application/json": {
+                "examples": {
+                  "AlreadyUsed": {
+                    "value": {
+                      "status": "error",
+                      "message": "Kupon ini sudah pernah digunakan sebelumnya!"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid atau belum login"
+          },
+          "404": {
+            "description": "Kode kupon salah atau tidak ditemukan"
+          },
+          "500": {
+            "description": "Gagal memverifikasi kupon"
+          }
+        }
+      }
+    },
+    "/rewards/{id}": {
+      "delete": {
+        "summary": "Menghapus katalog reward permanen (Admin Only)",
+        "description": "Menghapus data reward. Jika reward sudah pernah diklaim pengguna, penghapusan akan ditolak (Constraint Prisma P2003).",
+        "tags": [
+          "Rewards"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "UUID dari reward yang akan dihapus"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil dihapus",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Katalog reward berhasil dihapus secara permanen"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Ditolak karena reward sudah diklaim pengguna (P2003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Reward ini sudah pernah diklaim oleh pengguna sehingga tidak bisa dihapus permanen. Silakan nonaktifkan (isActive: false) reward ini sebagai gantinya."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid"
+          },
+          "403": {
+            "description": "Akses ditolak (Bukan Admin)"
+          },
+          "404": {
+            "description": "Katalog reward tidak ditemukan"
+          },
+          "500": {
+            "description": "Terjadi kesalahan pada server"
+          }
+        }
+      }
+    },
+    "/rewards/{id}/toggle": {
+      "patch": {
+        "summary": "Mengubah status aktif/nonaktif reward (Admin Only)",
+        "description": "Membalikkan (toggle) nilai boolean `isActive` pada suatu reward. Solusi alternatif jika reward tidak bisa dihapus permanen.",
+        "tags": [
+          "Rewards"
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "UUID dari reward yang akan diubah statusnya"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Status berhasil diubah",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Katalog reward berhasil dinonaktifkan"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "reward": {
+                          "type": "object",
+                          "properties": {
+                            "isActive": {
+                              "type": "boolean"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sesi tidak valid"
+          },
+          "403": {
+            "description": "Akses ditolak (Bukan Admin)"
+          },
+          "404": {
+            "description": "Katalog reward tidak ditemukan"
+          },
+          "500": {
+            "description": "Gagal mengubah status reward"
+          }
+        }
+      }
+    },
+    "/missions/generate": {
+      "post": {
+        "tags": [
+          "Missions"
+        ],
+        "summary": "Generate Quests using AI",
+        "description": "Memanggil layanan AI eksternal untuk membuat misi 7 hari ke depan berdasarkan profil kesehatan pengguna.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Misi berhasil dibuat",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Misi selama 7 hari berhasil dibuat oleh AI!"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "ai_analysis": {
+                          "type": "object"
+                        },
+                        "total_quests_generated": {
+                          "type": "integer",
+                          "example": 21
+                        },
+                        "gamification_data": {
+                          "type": "object"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Misi minggu ini sudah ada",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "example": {
+                  "status": "error",
+                  "message": "Anda sudah membuat misi dalam 7 hari terakhir. Selesaikan misi yang ada dan kembali lagi nanti!"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Profil kesehatan belum diisi"
+          },
+          "502": {
+            "description": "Gagal terhubung ke AI (HuggingFace Space)"
+          }
+        }
+      }
+    },
+    "/missions/progress/weekly": {
+      "get": {
+        "tags": [
+          "Missions"
+        ],
+        "summary": "Get Weekly Mission Progress",
+        "description": "Mengambil persentase misi yang diselesaikan dalam 7 hari terakhir.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil progress",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "percentage": {
+                          "type": "integer",
+                          "example": 75
+                        },
+                        "completedMissions": {
+                          "type": "integer",
+                          "example": 15
+                        },
+                        "totalMissions": {
+                          "type": "integer",
+                          "example": 20
+                        },
+                        "period": {
+                          "type": "object",
+                          "properties": {
+                            "start": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "end": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/missions": {
+      "get": {
+        "tags": [
+          "Missions"
+        ],
+        "summary": "Get List of User Missions",
+        "description": "Mengambil daftar misi milik pengguna yang sedang login. Mendukung filter tanggal dan status.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "required": false,
+            "description": "Filter misi berdasarkan rentang 7 hari mundur dari tanggal yang dipilih (Format YYYY-MM-DD)."
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "assigned",
+                "completed",
+                "failed"
+              ]
+            },
+            "required": false,
+            "description": "Filter berdasarkan status spesifik misi."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil daftar misi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "example": 5
+                        },
+                        "missions": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Mission"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/missions/{id}": {
+      "get": {
+        "tags": [
+          "Missions"
+        ],
+        "summary": "Get Specific Mission Detail",
+        "description": "Mengambil detail satu misi berdasarkan UUID.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "description": "UUID Misi"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil detail",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "mission": {
+                          "$ref": "#/components/schemas/Mission"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Misi tidak ditemukan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/missions/{id}/status": {
+      "patch": {
+        "tags": [
+          "Missions"
+        ],
+        "summary": "Update Mission Status (Submit Proof)",
+        "description": "Menyelesaikan misi dengan melampirkan file foto/video sebagai bukti (multipart/form-data).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "description": "UUID Misi"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "completed",
+                      "failed"
+                    ],
+                    "description": "Status baru misi. Gunakan 'completed' untuk submit tugas."
+                  },
+                  "proofImage": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File foto atau video bukti tugas (maksimal 10MB)."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Berhasil submit bukti",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Bukti misi berhasil dikirim! Menunggu verifikasi dari admin."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "mission": {
+                          "$ref": "#/components/schemas/Mission"
+                        },
+                        "userStats": {
+                          "type": "object",
+                          "nullable": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi Zod gagal atau Misi sudah pernah diselesaikan",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Gagal mengunggah file ke Cloudinary"
+          }
+        }
+      }
+    },
+    "/missions/{id}/verify": {
+      "patch": {
+        "tags": [
+          "Missions"
+        ],
+        "summary": "Verify Mission Submission (Admin Only)",
+        "description": "Verifikasi misi oleh admin (Approve/Reject). Jika disetujui, user mendapatkan XP dan Point.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "description": "UUID Misi yang akan diverifikasi"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "verificationStatus"
+                ],
+                "properties": {
+                  "verificationStatus": {
+                    "type": "string",
+                    "enum": [
+                      "approved",
+                      "rejected"
+                    ]
+                  },
+                  "rejectionReason": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "description": "Alasan penolakan jika verificationStatus = 'rejected'"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Verifikasi berhasil dieksekusi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Bukti misi disetujui. XP dan Poin telah diberikan kepada user."
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "mission": {
+                          "$ref": "#/components/schemas/Mission"
+                        },
+                        "userStats": {
+                          "type": "object",
+                          "nullable": true,
+                          "properties": {
+                            "experiencePoints": {
+                              "type": "integer"
+                            },
+                            "rewardPoints": {
+                              "type": "integer"
+                            },
+                            "level": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validasi gagal atau Misi sudah diverifikasi sebelumnya"
+          },
+          "404": {
+            "description": "Misi tidak ditemukan"
+          }
+        }
+      }
+    },
+    "/missions/admin/pending": {
+      "get": {
+        "tags": [
+          "Missions"
+        ],
+        "summary": "Get All Verifications (Admin Only)",
+        "description": "Mengambil seluruh daftar misi untuk verifikasi admin. Dapat difilter berdasarkan status (pending, approved, rejected, all).",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "verificationStatus",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "approved",
+                "rejected",
+                "all"
+              ],
+              "default": "pending"
+            },
+            "description": "Filter status verifikasi misi"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Berhasil mengambil antrean misi",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "success"
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Berhasil mengambil daftar antrean verifikasi"
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "total": {
+                          "type": "integer",
+                          "example": 3
+                        },
+                        "missions": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/PendingMission"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+export default swaggerDocument;
