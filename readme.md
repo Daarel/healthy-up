@@ -25,10 +25,8 @@ Projek ini dikembangkan sebagai tugas **Capstone Project**, Coding Camp 2026 pow
 
 ## 🔗 Referensi & Tautan Penting
 
-* **Web Admin:** [HealthyUp Admin](https://healthy-up-admin.vercel.app/)
-* **Web User:** [HealthyUp App](https://healthy-up-frontend.vercel.app)
-* **Swagger API Documentation:** [API Docs](https://healthy-up-production.up.railway.app/api-docs)
-* **HuggingFace API (AI):** [Generate Quests API](https://dkarnnd-ai-healthyup.hf.space/api/generate_quests)
+* **Web:** [HealthyUp](https://healthy-up.vercel.app/)
+* **Swagger API Documentation:** [API Docs](https://api-healthy-up/api-docs)
 * **HuggingFace Repository:** [dkarnnd/ai-healthyup](https://huggingface.co/spaces/dkarnnd/ai-healthyup/tree/main)
 * **Streamlit Dashboard:** [Data Dashboard](https://dashboard-capstone-xk3osna52wwkubxjgvsyyj.streamlit.app/)
 * **Dataset yang Digunakan:** [Estimation of obesity levels (UCI Repository)](https://archive.ics.uci.edu/dataset/544/estimation+of+obesity+levels+based+on+eating+habits+and+physical+condition)
@@ -54,17 +52,15 @@ Pemantauan *real-time* untuk kalori yang terbakar dan log berat badan mingguan. 
 ## 🛠️ Tech Stack & Arsitektur
 
 ### Frontend (Client-Side)
-Dibangun sebagai *Single Page Application* (SPA) dengan performa tinggi:
 * **Core:** React & Vite
 * **Routing:** React Router DOM
 * **Styling & UI:** Tailwind CSS, Radix UI Primitives, Lucide React
 * **Testing:** Vitest & React Testing Library
 
 ### Backend (Server-Side)
-Arsitektur RESTful API yang kokoh dan aman:
 * **Core:** Node.js & Express.js
 * **Database & ORM:** PostgreSQL & Prisma ORM
 * **Data Validation:** Zod
 * **Media Storage:** Cloudinary (via Multer)
 * **Security & Auth:** JSON Web Tokens (JWT), bcryptjs, Helmet, CORS
-* **Email Service:** Nodemailer & Resend
+* **Email Service:** Resend
