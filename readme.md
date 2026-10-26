@@ -26,7 +26,7 @@ Projek ini dikembangkan sebagai tugas **Capstone Project**, Coding Camp 2026 pow
 ## 🔗 Referensi & Tautan Penting
 
 * **Web:** [HealthyUp](https://healthy-up.vercel.app/)
-* **Swagger API Documentation:** [API Docs](https://api-healthy-up/api-docs)
+* **Swagger API Documentation:** [API Docs](https://api-healthy-up.vercel.app/api-docs)
 * **HuggingFace Repository:** [dkarnnd/ai-healthyup](https://huggingface.co/spaces/dkarnnd/ai-healthyup/tree/main)
 * **Streamlit Dashboard:** [Data Dashboard](https://dashboard-capstone-xk3osna52wwkubxjgvsyyj.streamlit.app/)
 * **Dataset yang Digunakan:** [Estimation of obesity levels (UCI Repository)](https://archive.ics.uci.edu/dataset/544/estimation+of+obesity+levels+based+on+eating+habits+and+physical+condition)
