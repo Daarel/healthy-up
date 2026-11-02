@@ -70,14 +70,14 @@ export default function RedeemSuccessModal({
             <div>
               <p className="text-xs text-[#6d7b6c] font-jakarta">Poin digunakan</p>
               <p className="text-lg font-bold text-red-500 font-lexend">
-                -{voucher.points.toLocaleString()} Pts
+                -{voucher.points.toLocaleString('id-ID')} Pts
               </p>
             </div>
             <div className="w-px h-10 bg-[#e5eeff]" />
             <div className="text-right">
               <p className="text-xs text-[#6d7b6c] font-jakarta">Sisa poin kamu</p>
               <p className="text-lg font-bold text-[#006e2f] font-lexend">
-                {remainingPts.toLocaleString()} Pts
+                {remainingPts.toLocaleString('id-ID')} Pts
               </p>
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { MoreVertical, Check, Clock, Star, Sparkle, Brain, Dumbbell, UtensilsCrossed, Apple, Footprints, Moon, Droplets, Activity, Flame, Heart, Wind, Bike, Salad, RefreshCw, Target, CheckCircle2, X } from "lucide-react";
+import { Check, Clock, Star, Sparkle, Brain, Dumbbell, UtensilsCrossed, Apple, Footprints, Moon, Droplets, Activity, Flame, Heart, Wind, Bike, Salad, RefreshCw, Target, CheckCircle2, X } from "lucide-react";
 import Navbar from "../components/Navbar";
 import WeightCard from "../components/WeightCard";
 import WeightReminderBanner from "../components/WeightReminderBanner";
@@ -93,7 +93,6 @@ export default function Dashboard() {
     username:        storedStats?.username        ?? "Pengguna",
   });
 
-  // ─── UI state ─────────────────────────────────────────────────────────────
   const [showWeightModal,   setShowWeightModal]   = useState(false);
   const [reminderDismissed, setReminderDismissed] = useState(false);
 
@@ -195,7 +194,6 @@ export default function Dashboard() {
   const [weeklyGenerateError, setWeeklyGenerateError] = useState("");
   const hasAutoRefreshed = useRef(false);
 
-  // ─── Weekly progress dari API (berdasarkan verificationStatus = approved) ──
   const [weeklyProgress, setWeeklyProgress] = useState({ approved: 0, total: 0 });
 
   const loadWeeklyProgress = useCallback(() => {
@@ -284,7 +282,6 @@ export default function Dashboard() {
     }
   }, [setupDone, loadWeeklyProgress]);
 
-  // ─── Handlers ─────────────────────────────────────────────────────────────
   const openWeightModal = () => { if (!isLoggedThisWeek) setShowWeightModal(true); };
 
   const handleWeightSuccess = async (newWeight) => {
@@ -365,7 +362,7 @@ export default function Dashboard() {
           console.error(err);
         }
         setSetupDone(true);
-        return mappedTasks; // <-- RETURN TASKS HERE
+        return mappedTasks;
       } else {
         throw new Error("No tasks generated");
       }
@@ -391,7 +388,7 @@ export default function Dashboard() {
   const progressPercent = weeklyProgress.total > 0
     ? Math.round((weeklyProgress.approved / weeklyProgress.total) * 100)
     : 0;
-  const circumference   = 2 * Math.PI * 56; // r=56
+  const circumference   = 2 * Math.PI * 56;
 
   return (
     <div className="min-h-screen bg-[var(--color-bg)]">

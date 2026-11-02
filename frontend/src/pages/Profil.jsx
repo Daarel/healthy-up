@@ -5,7 +5,6 @@ import {
   Edit2,
   Star,
   ChevronRight,
-  User,
   Trash2,
   AlertTriangle,
   Flame as FireIcon,
@@ -24,7 +23,6 @@ import Streak from '../components/ui/streak';
 import { authApi, userApi, healthApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
-// ─── Konstanta ────────────────────────────────────────────────────────────────
 const MONTHS = [
   'Jan',
   'Feb',
@@ -74,13 +72,10 @@ export default function Profile() {
   const [isProfileLoading, setIsProfileLoading] = useState(true);
 
   const [caloriesBurnedThisWeek, setCaloriesBurnedThisWeek] = useState(0);
-  const [_calorieDailyLogs, setCalorieDailyLogs] = useState([]);
 
-  // ─── Weight log state (TODO: fetch GET /api/weight-logs) ──────────────────
   // Struktur tiap item: { id, date (ISO string), weight (number), note (string) }
   const [weightLog, setWeightLog] = useState([]);
 
-  // ─── UI state ─────────────────────────────────────────────────────────────
   const [chartPeriod, setChartPeriod] = useState('mingguan');
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -137,7 +132,6 @@ export default function Profile() {
         const dataKalori = res.data || {};
 
         setCaloriesBurnedThisWeek(dataKalori.weeklyBurnedFromLog || 0);
-        setCalorieDailyLogs(dataKalori.dailyLogs || []);
       } catch (err) {
         if (!ignore) console.error('Gagal memuat data kalori:', err);
       }
@@ -186,7 +180,6 @@ export default function Profile() {
     };
   }, [chartPeriod]);
 
-  // ─── Derived values ───────────────────────────────────────────────────────
   const hasLog = weightLog.length > 0;
   const latestEntry = hasLog ? weightLog[weightLog.length - 1] : null;
   const firstEntry = hasLog ? weightLog[0] : null;
@@ -214,7 +207,6 @@ export default function Profile() {
     return new Date(latestEntry.date) >= startOfWeek;
   })();
 
-  // ─── Chart helpers ────────────────────────────────────────────────────────
   const chartEntries =
     chartPeriod === 'mingguan' ? weightLog.slice(-7) : weightLog;
   const hasChart = chartEntries.length >= 2;
@@ -239,7 +231,6 @@ export default function Profile() {
       ` L ${points[points.length - 1][0]} ${SVG_H} L ${points[0][0]} ${SVG_H} Z`
     : '';
 
-  // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -374,7 +365,6 @@ export default function Profile() {
     }
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className='min-h-screen bg-[var(--color-bg)]'>
       <Navbar />

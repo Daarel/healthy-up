@@ -7,7 +7,7 @@ export default function WeightInputModal({
   onSuccess,
   currentWeight,
   targetWeight = null,
-  allowNote: _allowNote = false,
+  allowNote = false,
   allowMultiplePerDay = false,
 }) {
   const [weightInput, setWeightInput] = useState("");
@@ -166,7 +166,7 @@ export default function WeightInputModal({
             )}
 
             {/* Catatan opsional */}
-            {/* {allowNote && (
+            {allowNote && (
               <div>
                 <label
                   htmlFor="weight-note"
@@ -185,7 +185,7 @@ export default function WeightInputModal({
                   className="w-full px-4 py-3 rounded-xl border border-[#c1c9bf] bg-white focus:outline-none focus:ring-2 focus:ring-[#006e2f] focus:border-transparent font-jakarta resize-none text-sm text-[#191c20]"
                 />
               </div>
-            )} */}
+            )}
 
             {/* Actions */}
             <div className="flex gap-3 pt-1">

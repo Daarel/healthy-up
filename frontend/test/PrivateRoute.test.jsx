@@ -4,7 +4,7 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import PrivateRoute from '../src/components/PrivateRoute';
 import * as AuthContextModule from '../src/context/AuthContext';
 import { setToken, removeToken } from '../src/lib/apiClient';
-import { decodeJwt, getRoleFromToken, isTokenExpired } from '../lib/jwt';
+import { decodeJwt, getRoleFromToken, isTokenExpired } from '../src/lib/jwt';
 
 // Helper untuk membuat fake JWT token
 function createFakeJwt(payload) {

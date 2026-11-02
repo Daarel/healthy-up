@@ -1,4 +1,4 @@
-import { Scale, ChevronRight, X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 
 export default function WeightReminderBanner({ show, onCatat, onDismiss }) {
   if (!show) return null;
