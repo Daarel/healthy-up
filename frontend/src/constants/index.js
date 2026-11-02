@@ -37,9 +37,9 @@ const GUIDE_PAGES = [
 ];
 
 const NAV_ITEMS = [
-  { to: "/admin/users", label: "Manajemen User", icon: Users },
-  { to: "/admin/missions", label: "Verifikasi Misi", icon: ClipboardCheck },
-  { to: "/admin/rewards", label: "Manajemen Reward", icon: Gift },
+  { to: "/admin/users", label: "Manajemen User", shortLabel: "User", icon: Users },
+  { to: "/admin/missions", label: "Verifikasi Misi", shortLabel: "Misi", icon: ClipboardCheck },
+  { to: "/admin/rewards", label: "Manajemen Reward", shortLabel: "Reward", icon: Gift },
 ];
 
 

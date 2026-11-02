@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { adminApi } from "@/lib/api";
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 /**
  * Konversi data misi dari backend ke shape yang dipakai UI.
@@ -139,7 +138,7 @@ function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto rounded-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h3 className="font-semibold text-gray-800">Detail Misi</h3>
@@ -274,7 +273,6 @@ function MissionDetailModal({ mission, onClose, onApprove, onReject, loadingId }
   );
 }
 
-// ── Halaman Utama ─────────────────────────────────────────────────────────────
 
 export default function AdminMissions() {
   const [missions, setMissions]               = useState([]);
@@ -319,7 +317,6 @@ export default function AdminMissions() {
     };
   }, [filterStatus]);
 
-  // ─── Handlers verifikasi ─────────────────────────────────────────────────
   const handleApprove = async (id) => {
     setLoadingId(id);
     try {
@@ -360,7 +357,6 @@ export default function AdminMissions() {
     }
   };
 
-  // ─── Derived state ────────────────────────────────────────────────────────
   const [pendingCount, setPendingCount] = useState(0);
 
   useEffect(() => {
@@ -369,7 +365,6 @@ export default function AdminMissions() {
       .catch(() => {});
   }, [missions]);
 
-  // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -507,7 +502,7 @@ export default function AdminMissions() {
                       <p className="text-xs text-gray-500 mt-1.5 line-clamp-1">{mission.description}</p>
                     )}
 
-                    <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-400">
+                    <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5 text-xs text-gray-400">
                       <span>+{mission.xpReward} XP</span>
                       <span>+{mission.pointsReward} Pts</span>
                       <span>Kesulitan: {mission.difficultyScore}/5</span>
