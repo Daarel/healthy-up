@@ -141,7 +141,7 @@ frontend/
 
 ## Halaman Aplikasi
 
-- `/onboarding/1` untuk halaman onboarding
+- `/onboarding` untuk halaman onboarding
 - `/login` untuk login
 - `/lupa-password` untuk meminta reset password
 - `/reset-password/otp` untuk input OTP
