@@ -1,12 +1,12 @@
-export const API_BASE_URL =
+const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   import.meta.env.VITE_BASE_URL ||
   import.meta.env.API_BASE_URL ||
   (import.meta.env.DEV
     ? "http://localhost:5001/api/v1"
     : "https://api-healthy-up.vercel.app/api/v1");
-export const REQUEST_TIMEOUT_MS = 20000;
-export const TOKEN_KEY = "healthyup:token";
+const REQUEST_TIMEOUT_MS = 20000;
+const TOKEN_KEY = "healthyup:token";
 
 export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
@@ -18,37 +18,6 @@ export function setToken(token) {
 
 export function removeToken() {
   localStorage.removeItem(TOKEN_KEY);
-}
-
-function getErrorMessage(data, fallback = "Terjadi kesalahan pada server.") {
-  return data?.message || data?.errors?.[0]?.message || fallback;
-}
-
-async function parseResponse(res, fallbackMessage) {
-  const data = await res.json().catch(() => null);
-  if (!res.ok) throw new Error(getErrorMessage(data, fallbackMessage));
-  return data;
-}
-
-async function send(path, options = {}, fallbackMessage) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-  try {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
-      ...options,
-      signal: controller.signal,
-    });
-    return await parseResponse(res, fallbackMessage);
-  } catch (err) {
-    if (err.name === "AbortError") {
-      throw new Error("Server terlalu lama merespons. Coba lagi beberapa saat lagi.");
-    }
-    if (err.message) throw err;
-    throw new Error("Tidak bisa terhubung ke server. Periksa koneksi atau coba lagi nanti.");
-  } finally {
-    clearTimeout(timeoutId);
-  }
 }
 
 export async function request(path, options = {}) {
@@ -89,16 +58,9 @@ export async function request(path, options = {}) {
   }
 }
 
-
-
 export function requestForm(path, formData, options = {}) {
-  const token = getToken();
-  return send(path, {
+  return request(path, {
     ...options,
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
     body: formData,
   });
 }

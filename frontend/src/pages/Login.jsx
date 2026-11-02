@@ -6,6 +6,7 @@ import { useNavigateWithTransition } from "../lib/useNavigateWithTransition";
 import { authApi } from "../lib/api";
 import { getRoleFromToken } from "../lib/jwt";
 import { useAuth } from "../context/AuthContext";
+import loginImg from "../assets/images/2.jpg";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -68,7 +69,7 @@ export default function Login() {
         {/* Logo */}
         <div className="pt-8 pb-2 max-w-md mx-auto w-full">
           <button
-            onClick={() => navigate("/onboarding/1")}
+            onClick={() => navigate("/onboarding")}
             className="flex items-center gap-2 group"
           >
             <Logo />
@@ -197,7 +198,7 @@ export default function Login() {
             Belum punya akun?{" "}
             <button
               type="button"
-              onClick={() => go("/onboarding/1", panelRef)}
+              onClick={() => go("/onboarding", panelRef)}
               className="text-[#006e2f] font-semibold hover:underline active:scale-95 transition-transform duration-150 inline-block"
             >
               Daftar sekarang
@@ -212,7 +213,7 @@ export default function Login() {
       <div className="hidden lg:block lg:w-1/2 bg-[#e5eeff] p-6">
         <div className="h-full rounded-3xl overflow-hidden">
           <img
-            src="/4.jpg"
+            src={loginImg}
             alt="Fitness"
             className="w-full h-full object-cover"
           />

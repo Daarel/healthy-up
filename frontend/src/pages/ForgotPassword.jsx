@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 import { authApi } from "../lib/api";
+import forgotPasswordImg from "../assets/images/2.jpg";
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
@@ -112,7 +113,7 @@ export default function ForgotPassword() {
       <div className="hidden lg:block lg:w-1/2 bg-[#e5eeff] p-6">
         <div className="h-full rounded-[32px] overflow-hidden">
           <img
-            src="/2.jpg"
+            src={forgotPasswordImg}
             alt="Fitness"
             className="w-full h-full object-cover"
           />

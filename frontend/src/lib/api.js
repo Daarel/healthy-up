@@ -3,9 +3,6 @@ import {
   request,
   requestForm,
   setToken,
-  getToken,
-  REQUEST_TIMEOUT_MS,
-  API_BASE_URL,
 } from './apiClient';
 
 export const authApi = {
@@ -64,14 +61,6 @@ export const authApi = {
 };
 
 export const userApi = {
-  getAll: async ({ page = 1, limit = 20 } = {}) => {
-    return request(`/users/all-users?page=${page}&limit=${limit}`);
-  },
-  deleteById: async (id) => {
-    return request(`/users/${id}`, {
-      method: 'DELETE',
-    });
-  },
   getMe: async () => {
     return request('/users/user');
   },
@@ -111,12 +100,6 @@ export const rewardApi = {
     return request('/rewards/claim', {
       method: 'POST',
       body: JSON.stringify({ rewardId }),
-    });
-  },
-  verify: async (redemptionCode) => {
-    return request('/rewards/verify', {
-      method: 'POST',
-      body: JSON.stringify({ redemptionCode }),
     });
   },
 };
@@ -172,53 +155,21 @@ export const missionApi = {
   },
 
   // PATCH /api/v1/missions/:id/status — tandai selesai + upload bukti
-  // Tidak pakai request() karena FormData butuh Content-Type multipart (diset otomatis browser)
   updateStatus: async (id, status, proofImageFile = null) => {
-    const token = getToken();
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
     const formData = new FormData();
     formData.append('status', status);
     if (proofImageFile) formData.append('proofImage', proofImageFile);
 
-    try {
-      const res = await fetch(`${API_BASE_URL}/missions/${id}/status`, {
-        method: 'PATCH',
-        signal: controller.signal,
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.message || 'Gagal memperbarui status misi.');
-      }
-      return data;
-    } catch (err) {
-      if (err.name === 'AbortError')
-        throw new Error('Server terlalu lama merespons.');
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    return requestForm(`/missions/${id}/status`, formData, { method: 'PATCH' });
   },
 };
 
 export const adminApi = {
-  login: async (email, password) => {
-    return authApi.login(email, password);
-  },
   logout: async () => {
     return authApi.logout();
   },
   getUsers: async ({ page = 1, limit = 20 } = {}) => {
     return request(`/users/all-users?page=${page}&limit=${limit}`);
-  },
-  getUserById: async (id) => {
-    return request(`/users/${id}`);
   },
   deleteUser: async (id) => {
     return request(`/users/${id}`, { method: 'DELETE' });

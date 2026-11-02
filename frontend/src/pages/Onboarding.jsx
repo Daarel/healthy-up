@@ -5,6 +5,7 @@ import { useNavigateWithTransition } from "../lib/useNavigateWithTransition";
 import { authApi } from "../lib/api";
 import { getRoleFromToken } from "../lib/jwt";
 import { useAuth } from "../context/AuthContext";
+import onboardingImg from "../assets/images/1.jpg";
 
 export default function Onboarding() {
   const navigate = useNavigate();
@@ -42,7 +43,6 @@ export default function Onboarding() {
     setRegisterError("");
     setIsLoading(true);
     try {
-      // TODO: kirim juga gender, age, height, weight dari SetupTargetModal saat backend siap
       const res = await authApi.register(username.trim(), email.trim(), password);
       const token = res?.data?.token;
       const role = getRoleFromToken(token) || res?.data?.user?.role || "user";
@@ -204,7 +204,7 @@ export default function Onboarding() {
       <div className="hidden lg:block lg:w-1/2 p-6 bg-[#e5eeff]">
         <div className="h-full overflow-hidden relative">
           <img
-            src="/1.jpg"
+            src={onboardingImg}
             alt="Fitness"
             className="w-full h-full object-cover rounded-3xl"
           />

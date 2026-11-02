@@ -86,26 +86,21 @@ export default function SetupTargetModal({
   initialTarget = 0,
   onConfirm,
 }) {
-  // ── Step state ──────────────────────────────────────────────────────────
   const [step, setStep] = useState("personal");
   const [realTasks, setRealTasks] = useState([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
 
-  // ── Step 1: personal ────────────────────────────────────────────────────
   const [gender, setGender] = useState("");
   const [age,    setAge]    = useState(25);
   const [height, setHeight] = useState(170);
   const [weight, setWeight] = useState(initialWeight || 70);
 
-  // ── Step 3: target ──────────────────────────────────────────────────────
   const [targetWeight, setTargetWeight] = useState(
     initialTarget || Math.max(30, (initialWeight || 70) - 5)
   );
 
-  // ── Step 4: generating ──────────────────────────────────────────────────
   const [typingIndex, setTypingIndex] = useState(0);
 
-  // Reset setiap kali modal dibuka (menggunakan render-phase update sesuai anjuran React)
   const [prevIsOpen, setPrevIsOpen] = useState(isOpen);
   if (isOpen !== prevIsOpen) {
     setPrevIsOpen(isOpen);
@@ -119,7 +114,6 @@ export default function SetupTargetModal({
     }
   }
 
-  // Saat weight berubah di step personal, sesuaikan target (render-phase update)
   const [prevWeight, setPrevWeight] = useState(weight);
   if (weight !== prevWeight) {
     setPrevWeight(weight);
@@ -165,7 +159,6 @@ export default function SetupTargetModal({
     }
   };
 
-  // ── KALKULASI BMI MANUAL ────────────────────────────────────────────────
   // Rumus BMI: Berat (kg) / (Tinggi (m) * Tinggi (m))
   const heightInMeters = height / 100;
   const calculatedBmi = heightInMeters > 0 ? (weight / (heightInMeters * heightInMeters)).toFixed(2) : 0;

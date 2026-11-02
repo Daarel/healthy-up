@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, KeyRound, CheckCircle2, Loader2 } from "lucide-react";
 import Logo from "../components/ui/logo";
 import { authApi } from "../lib/api";
+import resetPasswordImg from "../assets/images/3.jpg";
 
 const RULES = [
   { id: "length",  label: "Minimal 8 karakter",          test: (v) => v.length >= 8 },
@@ -279,7 +280,7 @@ export default function ResetPasswordBaru() {
       <div className="hidden lg:block lg:w-1/2 bg-[#e5eeff] p-6">
         <div className="h-full rounded-[32px] overflow-hidden">
           <img
-            src="/5.jpg"
+            src={resetPasswordImg}
             alt="Fitness"
             className="w-full h-full object-cover"
           />

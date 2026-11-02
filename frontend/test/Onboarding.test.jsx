@@ -24,7 +24,7 @@ const renderStep1 = () => {
     isLoading: false,
   });
   return render(
-    <MemoryRouter initialEntries={['/onboarding/1']}>
+    <MemoryRouter initialEntries={['/onboarding']}>
       <Onboarding />
     </MemoryRouter>
   );

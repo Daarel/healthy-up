@@ -1,4 +1,4 @@
-const FALLBACK_IMAGE = "/5.jpg";
+import defaultRewardImg from "../assets/images/6.jpg";
 
 function formatCategory(category) {
   if (!category) return "Umum";
@@ -10,7 +10,7 @@ export function mapReward(reward) {
     id: reward.id,
     title: reward.name,
     points: reward.pointsCost,
-    image: reward.imageUrl || FALLBACK_IMAGE,
+    image: reward.imageUrl || defaultRewardImg,
     category: formatCategory(reward.category),
     description: reward.description || `Stok tersedia: ${reward.stockQuantity ?? 0}`,
     stockQuantity: reward.stockQuantity ?? 0,
