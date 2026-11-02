@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { maskEmail } from "../lib/utils";
 import { authApi } from "../lib/api";
+import otpImg from "../assets/images/1.jpg";
 
 const OTP_LENGTH = 6;
-const RESEND_COOLDOWN = 60; // detik
+const RESEND_COOLDOWN = 60;
 
 export default function ResetPasswordOtp() {
   const navigate = useNavigate();
@@ -176,7 +177,7 @@ export default function ResetPasswordOtp() {
       <div className="hidden lg:block lg:w-1/2 bg-[#e5eeff] p-6">
         <div className="h-full rounded-[32px] overflow-hidden">
           <img
-            src="/6.jpg"
+            src={otpImg}
             alt="Fitness"
             className="w-full h-full object-cover"
           />
