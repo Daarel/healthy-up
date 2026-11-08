@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Hadiah from '../src/pages/Hadiah';
 import * as AuthContextModule from '../src/context/AuthContext';
+import { wrapWithQueryClient } from './testQueryClient';
 
 vi.mock('../src/components/ui/streak', () => ({ default: ({ count }) => <span>{count} Streak</span> }));
 vi.mock('../src/lib/api', () => ({
@@ -21,9 +22,11 @@ const renderHadiah = () => {
     isLoading: false,
   });
   return render(
-    <MemoryRouter initialEntries={['/hadiah']}>
-      <Hadiah />
-    </MemoryRouter>
+    wrapWithQueryClient(
+      <MemoryRouter initialEntries={['/hadiah']}>
+        <Hadiah />
+      </MemoryRouter>
+    )
   );
 };
 

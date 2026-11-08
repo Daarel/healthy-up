@@ -9,28 +9,17 @@ import {
   SlidersHorizontal,
   History,
 } from 'lucide-react';
-import Navbar from '../components/Navbar';
 import Streak from '../components/ui/streak';
 import RedeemSuccessModal from '../components/RedeemSuccessModal';
 import { mapReward, mapUserReward } from '../lib/rewardMappers';
 import { rewardApi, userApi } from '../lib/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const VOUCHER_CATEGORIES = ['semua', 'Kesehatan', 'Makanan', 'Gym'];
 
 export default function Hadiah() {
-  const [userProfile, setUserProfile] = useState({
-    totalPoints: 0,
-    currentLevel: 1,
-    currentPoints: 0,
-    nextLevelPoints: 1000,
-    nextLevelName: 'Penggerak',
-    streakCount: 0,
-    eliteBadge: false,
-  });
+  const queryClient = useQueryClient();
 
-  const [vouchers, setVouchers] = useState([]);
-  const [riwayat, setRiwayat] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [isRedeeming, setIsRedeeming] = useState(false);
 
@@ -56,54 +45,68 @@ export default function Hadiah() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    let ignore = false;
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const res = await userApi.getMe();
+      return res.data?.user;
+    },
+  });
 
-    const loadRewards = async () => {
-      setIsLoading(true);
-      setError('');
-      try {
-        const [userRes, rewardsRes, mineRes] = await Promise.all([
-          userApi.getMe(),
-          rewardApi.getAll('semua'),
-          rewardApi.getMine('all'),
-        ]);
-        const user = userRes.data.user;
-        if (ignore) return;
+  const { data: vouchers = [], isLoadingVouchers } = useQuery({
+    queryKey: ['rewards'],
+    queryFn: async () => {
+      const res = await rewardApi.getAll('semua');
+      return (res.data?.rewards || []).map(mapReward);
+    },
+  });
 
-        setUserProfile({
-          totalPoints: user.rewardPoints ?? 0,
-          currentLevel: user.level ?? 1,
-          currentPoints: user.experiencePoints ?? 0,
-          nextLevelPoints: (user.level ?? 1) * 1000,
-          nextLevelName: user.rankTitle || 'Level berikutnya',
-          streakCount: user.streakCount ?? 0,
-          eliteBadge: (user.level ?? 1) >= 10,
-        });
-        setVouchers((rewardsRes.data.rewards || []).map(mapReward));
-        setRiwayat((mineRes.data.myRewards || []).map(mapUserReward));
-      } catch (err) {
-        if (!ignore) setError(err.message || 'Gagal memuat data hadiah.');
-      } finally {
-        if (!ignore) setIsLoading(false);
-      }
-    };
+  const { data: riwayat = [] } = useQuery({
+    queryKey: ['myRewards'],
+    queryFn: async () => {
+      const res = await rewardApi.getMine('all');
+      return (res.data?.myRewards || []).map(mapUserReward);
+    },
+  });
 
-    loadRewards();
-    return () => {
-      ignore = true;
-    };
-  }, []);
+  const totalPoints = user?.rewardPoints ?? 0;
+  const currentLevel = user?.level ?? 1;
+  const currentPoints = user?.experiencePoints ?? 0;
+  const nextLevelPoints = currentLevel * 1000;
+  const nextLevelName = user?.rankTitle || 'Level berikutnya';
+  const streakCount = user?.streakCount ?? 0;
+  const eliteBadge = currentLevel >= 10;
 
-  const {
-    totalPoints,
-    currentLevel,
-    currentPoints,
-    nextLevelPoints,
-    nextLevelName,
-    streakCount,
-    eliteBadge,
-  } = userProfile;
+  const handleConfirmRedeem = async () => {
+    if (!selectedVoucher) return;
+    setIsRedeeming(true);
+    setError('');
+    try {
+      const res = await rewardApi.claim(selectedVoucher.id);
+      const { redemptionCode, remainingPoints } = res.data;
+
+      const redeemed = {
+        ...selectedVoucher,
+        code: redemptionCode,
+        remainingPoints,
+      };
+      setRedeemedVoucher(redeemed);
+
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      queryClient.invalidateQueries({ queryKey: ['rewards'] });
+      queryClient.invalidateQueries({ queryKey: ['myRewards'] });
+
+      setShowRedeemModal(false);
+      setSelectedVoucher(null);
+      setShowSuccessModal(true);
+      setCodeCopied(false);
+    } catch (err) {
+      setError(err.message || 'Gagal menukarkan voucher');
+    } finally {
+      setIsRedeeming(false);
+    }
+  };
+
   const levelProgress =
     nextLevelPoints > currentPoints
       ? Math.min(100, Math.max(0, (currentPoints / nextLevelPoints) * 100))
@@ -124,50 +127,6 @@ export default function Hadiah() {
     setSelectedVoucher(null);
   };
 
-  const handleConfirmRedeem = async () => {
-    if (!selectedVoucher) return;
-    setIsRedeeming(true);
-    setError('');
-    try {
-      const res = await rewardApi.claim(selectedVoucher.id);
-      const { redemptionCode, remainingPoints } = res.data;
-      const redeemed = {
-        ...selectedVoucher,
-        code: redemptionCode,
-        remainingPoints,
-      };
-      setRedeemedVoucher(redeemed);
-      setUserProfile((prev) => ({ ...prev, totalPoints: remainingPoints }));
-      setVouchers((prev) =>
-        prev.map((item) =>
-          item.id === selectedVoucher.id
-            ? { ...item, stockQuantity: Math.max(0, item.stockQuantity - 1) }
-            : item,
-        ),
-      );
-      setRiwayat((prev) => [
-        {
-          id: redemptionCode,
-          voucher: selectedVoucher.title,
-          merchantId: redemptionCode,
-          tanggal: new Date().toLocaleDateString('id-ID'),
-          points: selectedVoucher.points,
-          status: 'Berhasil',
-          code: redemptionCode,
-        },
-        ...prev,
-      ]);
-      setShowRedeemModal(false);
-      setSelectedVoucher(null);
-      setShowSuccessModal(true);
-      setCodeCopied(false);
-    } catch (err) {
-      setError(err.message || 'Gagal menukarkan voucher.');
-    } finally {
-      setIsRedeeming(false);
-    }
-  };
-
   const closeSuccessModal = () => {
     setShowSuccessModal(false);
     setRedeemedVoucher(null);
@@ -182,11 +141,8 @@ export default function Hadiah() {
   };
 
   return (
-    <div className='min-h-screen bg-[var(--color-bg)]'>
-      <Navbar />
-
-      <main className='lg:ml-72 pb-20 lg:pb-0'>
-        <div className='p-6 lg:p-8 max-w-6xl mx-auto'>
+    <>
+      <div className='p-6 lg:p-8 max-w-6xl mx-auto'>
           {error && (
             <p className='mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3 font-jakarta'>
               {error}
@@ -348,7 +304,7 @@ export default function Hadiah() {
             {/* Konten: Voucher Grid */}
             {!showRiwayat && (
               <div className='bg-white rounded-3xl p-6 border border-[#e5eeff] min-h-[320px]'>
-                {isLoading ? (
+                {isLoadingVouchers ? (
                   <div className='flex flex-col items-center justify-center py-16 text-center'>
                     <p className='text-[#6d7b6c] font-jakarta'>
                       Memuat voucher...
@@ -522,7 +478,6 @@ export default function Hadiah() {
             )}
           </div>
         </div>
-      </main>
 
       {/* Redeem Confirmation Modal */}
       {showRedeemModal && selectedVoucher && (
@@ -604,6 +559,6 @@ export default function Hadiah() {
           onCopy={handleCopyCode}
         />
       )}
-    </div>
+    </>
   );
 }

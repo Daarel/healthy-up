@@ -26,7 +26,7 @@ import {
   Bike,
   Salad,
 } from 'lucide-react';
-import Navbar from '../components/Navbar';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import SetupTargetModal from '../components/SetupTargetModal';
 import GuideModal from '../components/GuideModal';
 import { missionApi, healthApi } from '../lib/api';
@@ -68,47 +68,61 @@ function getTaskIcon(iconName, category) {
 }
 
 export default function Tugas() {
-  // Baca dari localStorage — key yang sama dengan Dashboard
-  const [setupDone, setSetupDone] = useState(() => {
-    try {
-      return localStorage.getItem('healthyup:setupDone') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const queryClient = useQueryClient();
 
-  const [weightData, setWeightData] = useState(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('healthyup:weightLog'));
-      const onboardingWeight =
-        JSON.parse(sessionStorage.getItem('healthyup:register'))?.weight ?? 0;
-      return {
-        currentWeight: stored?.currentWeight ?? onboardingWeight,
-        targetWeight: stored?.targetWeight ?? 0,
-      };
-    } catch {
-      return { currentWeight: 0, targetWeight: 0 };
-    }
-  });
-
-  const [tasks, setTasks] = useState([]); // flat array dari backend
-  const [loading, setLoading] = useState(false);
   const [isGeneratingWeekly, setIsGeneratingWeekly] = useState(false);
   const [weeklyRefreshNotice, setWeeklyRefreshNotice] = useState('');
   const [error, setError] = useState(null);
-  const hasFetched = useRef(false);
   const hasAutoRefreshed = useRef(false);
+
+  const { data: healthProfile } = useQuery({
+    queryKey: ['healthProfile'],
+    queryFn: async () => {
+      try {
+        const res = await healthApi.getMyProfile();
+        return res.data?.profile || null;
+      } catch {
+        return null;
+      }
+    },
+  });
+
+  const setupDone = Boolean(healthProfile || localStorage.getItem('healthyup:setupDone') === 'true');
+
+  const onboardingWeight = (() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('healthyup:register'))?.weight ?? 0;
+    } catch {
+      return 0;
+    }
+  })();
+
+  const weightData = {
+    currentWeight: Number(healthProfile?.weightKg) || onboardingWeight,
+    targetWeight: Number(healthProfile?.goalWeight) || 0,
+  };
+
+  const {
+    data: tasks = [],
+    isLoading: loading,
+    refetch: refetchMissions,
+  } = useQuery({
+    queryKey: ['missions'],
+    queryFn: async () => {
+      const res = await missionApi.getAll();
+      return res?.data?.missions || [];
+    },
+  });
 
   // Fungsi untuk men-generate misi minggu baru secara langsung (otomatis maupun tombol manual)
   const handleGenerateNewWeek = useCallback(async (isAuto = false) => {
-    if (!missionApi?.generate || !missionApi?.getAll) return;
+    if (!missionApi?.generate) return;
     setIsGeneratingWeekly(true);
     setError(null);
     try {
       await missionApi.generate();
-      const res = await missionApi.getAll();
-      const newMissions = res?.data?.missions || [];
-      setTasks(newMissions);
+      await queryClient.invalidateQueries({ queryKey: ['missions'] });
+      await queryClient.invalidateQueries({ queryKey: ['weeklyProgress'] });
       setWeeklyRefreshNotice(
         isAuto
           ? 'Selamat memasuki minggu baru! AI telah otomatis menyusun misi baru untukmu.'
@@ -120,73 +134,16 @@ export default function Tugas() {
       }
     } finally {
       setIsGeneratingWeekly(false);
-      setLoading(false);
     }
-  }, []);
+  }, [queryClient]);
 
-  // Fetch misi saat komponen mount + cek auto-refresh mingguan
+  // Auto-refresh jika user sudah setup profil tapi misi 7 hari terakhir sudah habis (0)
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-
-    if (!missionApi?.getAll) {
-      return;
+    if (setupDone && tasks.length === 0 && !hasAutoRefreshed.current && !loading) {
+      hasAutoRefreshed.current = true;
+      handleGenerateNewWeek(true);
     }
-
-    missionApi
-      .getAll()
-      .then(async (res) => {
-        const fetchedMissions = res?.data?.missions || [];
-        if (fetchedMissions.length > 0) {
-          setTasks(fetchedMissions);
-          setSetupDone(true);
-          try {
-            localStorage.setItem('healthyup:setupDone', 'true');
-          } catch (e) {
-            console.error(e);
-          }
-          setLoading(false);
-          return;
-        }
-
-        // Jika misi kosong (0), cek apakah user sudah punya profil kesehatan (minggu baru)
-        let profileExists = false;
-        try {
-          profileExists = localStorage.getItem('healthyup:setupDone') === 'true';
-        } catch {
-          profileExists = false;
-        }
-
-        if (healthApi?.getMyProfile) {
-          try {
-            const profRes = await healthApi.getMyProfile();
-            const profile = profRes?.data?.profile;
-            if (profile) {
-              profileExists = true;
-              setSetupDone(true);
-              setWeightData((prev) => ({
-                currentWeight: Number(profile.weightKg) || prev.currentWeight,
-                targetWeight: Number(profile.goalWeight) || prev.targetWeight,
-              }));
-              localStorage.setItem('healthyup:setupDone', 'true');
-            }
-          } catch {
-            // Profil belum dibuat di server
-          }
-        }
-
-        if (profileExists && !hasAutoRefreshed.current && missionApi?.generate) {
-          hasAutoRefreshed.current = true;
-          await handleGenerateNewWeek(true);
-        } else {
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        setError(err.message);
-        setLoading(false);
-      });
-  }, [handleGenerateNewWeek]);
+  }, [setupDone, tasks.length, loading, handleGenerateNewWeek]);
 
   const hasTasks = tasks.length > 0;
 
@@ -219,13 +176,7 @@ export default function Tugas() {
       console.error(err);
     }
 
-    setWeightData({ currentWeight: newWeight, targetWeight: newTarget });
-    setSetupDone(true);
-    setLoading(true);
-    setError(null);
-
     try {
-      // 1. Simpan/update health profile ke backend dulu
       await healthApi?.createProfile?.({
         gender,
         age,
@@ -234,32 +185,24 @@ export default function Tugas() {
         goalWeight: newTarget,
       });
     } catch (profileErr) {
-      // Jika profil sudah ada (PROFILE_ALREADY_EXISTS), abaikan dan lanjut generate
-      // Jika error lain, tampilkan ke user
       const isAlreadyExists =
         profileErr.message?.toLowerCase().includes('sudah') ||
         profileErr.message?.toLowerCase().includes('already');
       if (!isAlreadyExists) {
         setError(`Gagal menyimpan profil: ${profileErr.message}`);
-        setLoading(false);
         return;
       }
     }
 
     try {
-      // 2. Generate misi via AI
       await missionApi?.generate?.();
-      // 3. Ambil misi yang baru dibuat
-      const res = await missionApi.getAll();
-      const generatedMissions = res?.data?.missions || [];
-      setTasks(generatedMissions);
+      queryClient.invalidateQueries({ queryKey: ['healthProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+      queryClient.invalidateQueries({ queryKey: ['weeklyProgress'] });
       setWeeklyRefreshNotice('Target diperbarui dan misi minggu ini berhasil disusun oleh AI!');
-      return generatedMissions;
+      setShowSetupModal(false);
     } catch (err) {
       setError(err.message);
-      return [];
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -379,7 +322,7 @@ export default function Tugas() {
       }));
 
       // Update state tugas dengan data terbaru dari server (status completed + verificationStatus pending)
-      setTasks((prev) =>
+      queryClient.setQueryData(['missions'], (prev = []) =>
         prev.map((t) =>
           t.id === selectedTask.id
             ? {
@@ -418,6 +361,9 @@ export default function Tugas() {
       }
 
       closeUploadModal();
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+      queryClient.invalidateQueries({ queryKey: ['weeklyProgress'] });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
     } catch (err) {
       setSubmitError(err.message);
     } finally {
@@ -434,12 +380,9 @@ export default function Tugas() {
     );
 
   return (
-    <div className='min-h-screen bg-[var(--color-bg)]'>
-      <Navbar />
-
+    <>
       {/* Main Content */}
-      <main className='lg:ml-72 pb-20 lg:pb-0'>
-        <div className='p-6 lg:p-8 max-w-5xl mx-auto'>
+      <div className='p-6 lg:p-8 max-w-5xl mx-auto'>
           {/* Header */}
           <div className='flex items-center justify-between mb-8'>
             <div>
@@ -512,13 +455,8 @@ export default function Tugas() {
               <div className='mt-6 flex flex-wrap items-center justify-center gap-3'>
                 <button
                   onClick={() => {
-                    setLoading(true);
                     setError(null);
-                    missionApi
-                      .getAll()
-                      .then((r) => setTasks(r.data.missions))
-                      .catch((e) => setError(e.message))
-                      .finally(() => setLoading(false));
+                    refetchMissions();
                   }}
                   className='px-6 py-3 bg-[#006e2f] text-white rounded-xl font-semibold font-lexend hover:bg-[#005823] transition-colors'
                 >
@@ -806,7 +744,6 @@ export default function Tugas() {
             </>
           )}
         </div>
-      </main>
 
       {/* ─── Mission Detail Drawer ─── */}
       {detailOpen && detailTask && (
@@ -1239,6 +1176,6 @@ export default function Tugas() {
         initialTarget={weightData.targetWeight}
         onConfirm={handleSetupConfirm}
       />
-    </div>
+    </>
   );
 }

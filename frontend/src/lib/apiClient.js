@@ -1,10 +1,4 @@
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_BASE_URL ||
-  import.meta.env.API_BASE_URL ||
-  (import.meta.env.DEV
-    ? "http://localhost:5001/api/v1"
-    : "https://api-healthy-up.vercel.app/api/v1");
+const API_BASE_URL = import.meta.env.API_BASE_URL;
 const REQUEST_TIMEOUT_MS = 20000;
 const TOKEN_KEY = "healthyup:token";
 

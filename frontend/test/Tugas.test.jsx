@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Tugas from '../src/pages/Tugas';
 import * as AuthContextModule from '../src/context/AuthContext';
+import { wrapWithQueryClient } from './testQueryClient';
 
 vi.mock('../src/components/SetupTargetModal', () => ({
   default: ({ isOpen, onClose }) =>
@@ -38,9 +39,11 @@ const renderTugas = () => {
     isLoading: false,
   });
   return render(
-    <MemoryRouter initialEntries={['/tugas']}>
-      <Tugas />
-    </MemoryRouter>
+    wrapWithQueryClient(
+      <MemoryRouter initialEntries={['/tugas']}>
+        <Tugas />
+      </MemoryRouter>
+    )
   );
 };
 
@@ -59,19 +62,20 @@ describe('Tugas Page', () => {
     expect(screen.getByText(/Selesaikan tugas mingguan untuk mendapatkan poin/i)).toBeInTheDocument();
   });
 
-  it('menampilkan empty state saat belum ada tugas (setupDone false)', () => {
+  it('menampilkan empty state saat belum ada tugas (setupDone false)', async () => {
     renderTugas();
-    expect(screen.getByText('Belum ada tugas minggu ini')).toBeInTheDocument();
+    expect(await screen.findByText('Belum ada tugas minggu ini')).toBeInTheDocument();
   });
 
-  it('menampilkan tombol Atur Target Sekarang di empty state', () => {
+  it('menampilkan tombol Atur Target Sekarang di empty state', async () => {
     renderTugas();
-    expect(screen.getByText('Atur Target Sekarang')).toBeInTheDocument();
+    expect(await screen.findByText('Atur Target Sekarang')).toBeInTheDocument();
   });
 
-  it('tombol Atur Target Sekarang membuka modal setup', () => {
+  it('tombol Atur Target Sekarang membuka modal setup', async () => {
     renderTugas();
-    fireEvent.click(screen.getByText('Atur Target Sekarang'));
+    const btn = await screen.findByText('Atur Target Sekarang');
+    fireEvent.click(btn);
     expect(screen.getByRole('dialog', { name: 'setup-modal' })).toBeInTheDocument();
   });
 
@@ -85,22 +89,22 @@ describe('Tugas Page', () => {
   // Tantangan tasks ada di INITIAL_TASKS tapi tabs hanya tampil saat hasTasks true.
   // Untuk test tab, kita perlu mock state dengan hari-ini tasks juga.
 
-  it('menampilkan tab Tugas Minggu Ini dan Tantangan setelah setup dengan tugas', () => {
+  it('menampilkan tab Tugas Minggu Ini dan Tantangan setelah setup dengan tugas', async () => {
     // Tantangan tab hanya muncul saat hasTasks = true (setupDone + hari-ini tasks > 0)
     // Karena kita tidak bisa inject tasks langsung, kita test bahwa
     // empty state menampilkan tombol setup yang benar
     renderTugas();
-    expect(screen.getByText('Belum ada tugas minggu ini')).toBeInTheDocument();
-    expect(screen.getByText('Atur Target Sekarang')).toBeInTheDocument();
+    expect(await screen.findByText('Belum ada tugas minggu ini')).toBeInTheDocument();
+    expect(await screen.findByText('Atur Target Sekarang')).toBeInTheDocument();
   });
 
-  it('menampilkan tugas Tantangan saat setupDone dan hari-ini kosong', () => {
+  it('menampilkan tugas Tantangan saat setupDone dan hari-ini kosong', async () => {
     // Dengan setupDone=true tapi hari-ini kosong, hasTasks=false → empty state
     window.localStorage.setItem('healthyup:setupDone', 'true');
     renderTugas();
     // hasTasks = false karena hari-ini masih kosong
-    expect(screen.getByText('Belum ada tugas minggu ini')).toBeInTheDocument();
-    expect(screen.getByText('Generate Misi Minggu Ini')).toBeInTheDocument();
+    expect(await screen.findByText('Belum ada tugas minggu ini')).toBeInTheDocument();
+    expect(await screen.findByText('Generate Misi Minggu Ini')).toBeInTheDocument();
     window.localStorage.clear();
   });
 });

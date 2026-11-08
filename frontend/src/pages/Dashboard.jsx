@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Clock, Star, Sparkle, Brain, Dumbbell, UtensilsCrossed, Apple, Footprints, Moon, Droplets, Activity, Flame, Heart, Wind, Bike, Salad, RefreshCw, Target, CheckCircle2, X } from "lucide-react";
-import Navbar from "../components/Navbar";
 import WeightCard from "../components/WeightCard";
 import WeightReminderBanner from "../components/WeightReminderBanner";
 import WeightInputModal from "../components/WeightInputModal";
@@ -11,7 +11,6 @@ import { healthApi, missionApi, userApi } from "../lib/api";
 
 const WEIGHT_STORAGE_KEY = "healthyup:weightLog";
 const SETUP_DONE_KEY     = "healthyup:setupDone";
-const STATS_STORAGE_KEY  = "healthyup:stats";
 
 // Map nama icon dari backend → Lucide component (sama seperti Tugas.jsx)
 const ICON_MAP = {
@@ -69,37 +68,16 @@ const readOnboardingWeight = () => {
   } catch { return 0; }
 };
 
-const readStats = () => {
-  if (typeof window === "undefined") return null;
-  try { return JSON.parse(window.localStorage.getItem(STATS_STORAGE_KEY)) ?? null; }
-  catch { return null; }
-};
-
 export default function Dashboard() {
   const navigate = useNavigate();
-
-  const stored = readWeightLog();
-  const onboardingWeight = readOnboardingWeight();
-  const [targetWeight,   setTargetWeight]   = useState(stored?.targetWeight   ?? 0);
-  const [currentWeight,  setCurrentWeight]  = useState(stored?.currentWeight  ?? onboardingWeight);
-  const [previousWeight, setPreviousWeight] = useState(stored?.previousWeight ?? 0);
-  const [lastLoggedDate, setLastLoggedDate] = useState(stored?.lastLoggedDate ?? null);
-
-  const storedStats = readStats();
-  const [stats, setStats] = useState({
-    caloriesBurned:  storedStats?.caloriesBurned  ?? 0,
-    caloriesTarget:  storedStats?.caloriesTarget  ?? 1800,
-    streakCount:     storedStats?.streakCount     ?? 0,
-    username:        storedStats?.username        ?? "Pengguna",
-  });
+  const queryClient = useQueryClient();
 
   const [showWeightModal,   setShowWeightModal]   = useState(false);
   const [reminderDismissed, setReminderDismissed] = useState(false);
-
-  const [setupDone, setSetupDone] = useState(() => {
-    try { return localStorage.getItem(SETUP_DONE_KEY) === "true"; }
-    catch { return false; }
-  });
+  const [isGeneratingWeekly, setIsGeneratingWeekly] = useState(false);
+  const [weeklyRefreshNotice, setWeeklyRefreshNotice] = useState("");
+  const [weeklyGenerateError, setWeeklyGenerateError] = useState("");
+  const hasAutoRefreshed = useRef(false);
 
   // Auto-buka modal setup untuk user baru (hanya 1 kali)
   const [showSetupModal, setShowSetupModal] = useState(() => {
@@ -113,103 +91,100 @@ export default function Dashboard() {
     catch { return false; }
   });
 
-  useEffect(() => {
-    userApi?.getMe?.()
-      .then(res => {
-        const u = res.data?.user;
-        if (u) {
-          setStats(prev => ({
-            ...prev,
-            username: u.username,
-            streakCount: u.streakCount ?? 0,
-          }));
-        }
-      })
-      .catch(err => console.error("Gagal load user", err));
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const res = await userApi.getMe();
+      return res.data?.user;
+    },
+  });
 
-    healthApi?.getCalorieLogs?.()
-      .then(res => {
-        // backend returns: { status, data: { weeklyBurnedFromLog, dailyLogs } }
-        const dataKalori = res.data || {};
-        setStats(prev => ({
-          ...prev,
-          caloriesBurned: dataKalori.weeklyBurnedFromLog || 0,
-        }));
-      })
-      .catch(err => console.error("Gagal load kalori", err));
+  const { data: calorieLogsData } = useQuery({
+    queryKey: ['calorieLogs'],
+    queryFn: async () => {
+      const res = await healthApi.getCalorieLogs();
+      return res.data || {};
+    },
+  });
 
-    healthApi?.getMyProfile?.()
-      .then(res => {
-        const profile = res.data?.profile;
-        if (profile) {
-          const w = Number(profile.weightKg) || 0;
-          const g = Number(profile.goalWeight) || 0;
-          if (w > 0) setCurrentWeight(prev => prev || w);
-          if (g > 0) setTargetWeight(prev => prev || g);
-          setSetupDone(true);
-          try {
-            window.localStorage.setItem(SETUP_DONE_KEY, "true");
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      })
-      .catch(() => {
-        // Profil kesehatan belum dibuat
-      });
+  const { data: healthProfile } = useQuery({
+    queryKey: ['healthProfile'],
+    queryFn: async () => {
+      try {
+        const res = await healthApi.getMyProfile();
+        return res.data?.profile || null;
+      } catch {
+        return null;
+      }
+    },
+  });
 
-    healthApi?.getWeightLogs?.("month")
-      .then(res => {
-        const logs = (res.data?.weightLogs || []).filter(l => l.weight > 0);
-        if (logs.length > 0) {
-          const latest = logs[logs.length - 1];
-          const prev = logs.length >= 2 ? logs[logs.length - 2] : null;
-          setCurrentWeight(latest.weight);
-          if (prev) setPreviousWeight(prev.weight);
+  const { data: weightLogsData = [] } = useQuery({
+    queryKey: ['weightLogs', 'month'],
+    queryFn: async () => {
+      const res = await healthApi.getWeightLogs('month');
+      return res.data?.weightLogs || [];
+    },
+  });
 
-          const now = new Date();
-          const day = now.getDay();
-          const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
-          const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diffToMonday, 0, 0, 0, 0);
-          const latestDate = new Date(latest.loggedAt || latest.date);
-          if (latestDate >= startOfWeek) {
-            setLastLoggedDate(getThisWeekKey());
-          }
-        }
-      })
-      .catch(() => {});
-  }, []);
+  const { data: weeklyProgress = { approved: 0, total: 0 } } = useQuery({
+    queryKey: ['weeklyProgress'],
+    queryFn: async () => {
+      const res = await missionApi.getWeeklyProgress();
+      const data = res?.data;
+      return {
+        approved: data?.completedMissions ?? data?.approved ?? 0,
+        total: data?.totalMissions ?? data?.total ?? 0,
+      };
+    },
+  });
 
-  const thisWeekKey      = getThisWeekKey();
+  const { data: rawMissions = [], isLoading: loadingTasks } = useQuery({
+    queryKey: ['missions'],
+    queryFn: async () => {
+      const res = await missionApi.getAll();
+      return res?.data?.missions || [];
+    },
+  });
+
+  const setupDone = Boolean(healthProfile || localStorage.getItem(SETUP_DONE_KEY) === "true");
+
+  const stored = readWeightLog();
+  const onboardingWeight = readOnboardingWeight();
+  const validLogs = (weightLogsData || []).filter((l) => l.weight > 0);
+  const latestLog = validLogs.length > 0 ? validLogs[validLogs.length - 1] : null;
+  const prevLog = validLogs.length >= 2 ? validLogs[validLogs.length - 2] : null;
+
+  const currentWeight = latestLog
+    ? latestLog.weight
+    : (Number(healthProfile?.weightKg) || stored?.currentWeight || onboardingWeight);
+  const previousWeight = prevLog ? prevLog.weight : (stored?.previousWeight ?? 0);
+  const targetWeight = Number(healthProfile?.goalWeight) || stored?.targetWeight || 0;
+
+  const lastLoggedDate = (() => {
+    if (stored?.lastLoggedDate) return stored.lastLoggedDate;
+    if (!latestLog) return null;
+    const now = new Date();
+    const day = now.getDay();
+    const diffToMonday = now.getDate() - day + (day === 0 ? -6 : 1);
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), diffToMonday, 0, 0, 0, 0);
+    const latestDate = new Date(latestLog.loggedAt || latestLog.date);
+    return latestDate >= startOfWeek ? getThisWeekKey() : null;
+  })();
+
+  const stats = {
+    caloriesBurned: calorieLogsData?.weeklyBurnedFromLog || 0,
+    caloriesTarget: 1800,
+    streakCount: user?.streakCount ?? 0,
+    username: user?.username || "Pengguna",
+  };
+
+  const thisWeekKey = getThisWeekKey();
   const isLoggedThisWeek = lastLoggedDate === thisWeekKey;
-  const showReminder     = !isLoggedThisWeek && !reminderDismissed;
-  const weightDiff       = +(currentWeight - previousWeight).toFixed(1);
+  const showReminder = !isLoggedThisWeek && !reminderDismissed;
+  const weightDiff = +(currentWeight - previousWeight).toFixed(1);
   const caloriesRemaining = Math.max(0, stats.caloriesTarget - stats.caloriesBurned);
-  const caloriesPercent   = Math.min(100, Math.round((stats.caloriesBurned / stats.caloriesTarget) * 100));
-
-  const [tasks, setTasks] = useState([]);
-  const [loadingTasks, setLoadingTasks] = useState(setupDone);
-  const [isGeneratingWeekly, setIsGeneratingWeekly] = useState(false);
-  const [weeklyRefreshNotice, setWeeklyRefreshNotice] = useState("");
-  const [weeklyGenerateError, setWeeklyGenerateError] = useState("");
-  const hasAutoRefreshed = useRef(false);
-
-  const [weeklyProgress, setWeeklyProgress] = useState({ approved: 0, total: 0 });
-
-  const loadWeeklyProgress = useCallback(() => {
-    if (!missionApi?.getWeeklyProgress) return;
-    missionApi.getWeeklyProgress()
-      .then(res => {
-        const data = res?.data;
-        if (data) {
-          setWeeklyProgress({
-            approved: data.completedMissions ?? data.approved ?? 0,
-            total:    data.totalMissions    ?? data.total    ?? 0,
-          });
-        }
-      })
-      .catch(err => console.error("Gagal load weekly progress", err));
-  }, []);
+  const caloriesPercent = Math.min(100, Math.round((stats.caloriesBurned / stats.caloriesTarget) * 100));
 
   const mapMissionsToTasks = useCallback((missions) => {
     return missions.slice(0, 5).map((t) => ({
@@ -225,17 +200,17 @@ export default function Dashboard() {
     }));
   }, []);
 
-  // Fungsi manual maupun otomatis untuk generate misi minggu baru
+  const tasks = mapMissionsToTasks(rawMissions);
+
+  // Generate misi minggu baru
   const handleGenerateNewWeek = useCallback(async (isAuto = false) => {
-    if (!missionApi?.generate || !missionApi?.getAll) return;
+    if (!missionApi?.generate) return;
     setIsGeneratingWeekly(true);
     setWeeklyGenerateError("");
     try {
       await missionApi.generate();
-      const res = await missionApi.getAll();
-      const refreshedMissions = res?.data?.missions || [];
-      setTasks(mapMissionsToTasks(refreshedMissions));
-      loadWeeklyProgress();
+      await queryClient.invalidateQueries({ queryKey: ['missions'] });
+      await queryClient.invalidateQueries({ queryKey: ['weeklyProgress'] });
       setWeeklyRefreshNotice(
         isAuto
           ? "Selamat memasuki minggu baru! AI telah otomatis menyusun misi baru untukmu."
@@ -247,67 +222,31 @@ export default function Dashboard() {
       }
     } finally {
       setIsGeneratingWeekly(false);
-      setLoadingTasks(false);
     }
-  }, [loadWeeklyProgress, mapMissionsToTasks]);
+  }, [queryClient]);
 
   useEffect(() => {
-    if (!setupDone || !missionApi?.getAll) {
-      return;
+    if (setupDone && rawMissions.length === 0 && !hasAutoRefreshed.current && !loadingTasks) {
+      hasAutoRefreshed.current = true;
+      handleGenerateNewWeek(true);
     }
-
-    missionApi.getAll()
-      .then(async (res) => {
-        const missions = res?.data?.missions || [];
-        if (missions.length > 0) {
-          setTasks(mapMissionsToTasks(missions));
-          setLoadingTasks(false);
-        } else if (!hasAutoRefreshed.current && missionApi?.generate) {
-          // Auto-refresh jika user sudah setup profil tapi misi 7 hari terakhir sudah habis (0)
-          hasAutoRefreshed.current = true;
-          await handleGenerateNewWeek(true);
-        } else {
-          setLoadingTasks(false);
-        }
-      })
-      .catch(err => {
-        console.error("Gagal load missions", err);
-        setLoadingTasks(false);
-      });
-  }, [setupDone, mapMissionsToTasks, handleGenerateNewWeek]);
-
-  useEffect(() => {
-    if (setupDone) {
-      loadWeeklyProgress();
-    }
-  }, [setupDone, loadWeeklyProgress]);
+  }, [setupDone, rawMissions.length, loadingTasks, handleGenerateNewWeek]);
 
   const openWeightModal = () => { if (!isLoggedThisWeek) setShowWeightModal(true); };
 
   const handleWeightSuccess = async (newWeight) => {
     try {
       await healthApi?.createWeightLog?.({ weight: newWeight });
+      queryClient.invalidateQueries({ queryKey: ['weightLogs'] });
+      setShowWeightModal(false);
     } catch (err) {
       if (err?.message) {
         alert(err.message);
-        return;
       }
     }
-    const newPrev = currentWeight;
-    setPreviousWeight(newPrev);
-    setCurrentWeight(newWeight);
-    setLastLoggedDate(thisWeekKey);
-    try {
-      window.localStorage.setItem(WEIGHT_STORAGE_KEY, JSON.stringify({
-        currentWeight: newWeight, previousWeight: newPrev,
-        lastLoggedDate: thisWeekKey, targetWeight,
-      }));
-    } catch (err) { console.error(err) }
-    setShowWeightModal(false);
   };
 
   const handleSetupConfirm = async ({ gender, age, height, currentWeight: newWeight, targetWeight: newTarget }) => {
-
     const profilePayload = {
       gender,
       age,
@@ -318,68 +257,19 @@ export default function Dashboard() {
 
     try {
       await healthApi?.createProfile?.(profilePayload);
-    } catch (err) {
-      console.dir(err); 
-    }
-
-    try {
-      await missionApi?.generate?.();
-    } catch (err) {
-      console.dir(err);
-    }
-
-    if (newWeight !== currentWeight) {
-      setPreviousWeight(currentWeight);
-      setCurrentWeight(newWeight);
-    }
-    setTargetWeight(newTarget);
-    
-    try {
-      const res = await missionApi.getAll();
-      const generatedTasks = res.data?.missions || [];
-      // Gunakan task dari backend jika ada
-      if (generatedTasks.length > 0) {
-        const mappedTasks = generatedTasks.map((t) => ({
-          id: t.id, title: t.title, category: t.category,
-          icon: t.icon,
-          status: t.status,
-          verificationStatus: t.verificationStatus,
-          completed: t.status === 'completed' && t.verificationStatus === 'approved',
-          claimed: t.status === 'completed' && t.verificationStatus === 'approved',
-          points: t.pointsReward || t.points || 0,
-        }));
-        setTasks(mappedTasks.slice(0, 5));
-        loadWeeklyProgress();
-        
-        try {
-          window.localStorage.setItem(WEIGHT_STORAGE_KEY, JSON.stringify({
-            currentWeight: newWeight, previousWeight: currentWeight,
-            lastLoggedDate, targetWeight: newTarget,
-          }));
-          window.localStorage.setItem(SETUP_DONE_KEY, "true");
-          window.localStorage.removeItem("healthyup:newUser");
-        } catch (err){
-          console.error(err);
-        }
-        setSetupDone(true);
-        return mappedTasks;
-      } else {
-        throw new Error("No tasks generated");
-      }
-    } catch {
-      setTargetWeight(newTarget);
       try {
-        window.localStorage.setItem(WEIGHT_STORAGE_KEY, JSON.stringify({
-          currentWeight: newWeight, previousWeight: currentWeight,
-          lastLoggedDate, targetWeight: newTarget,
-        }));
-        window.localStorage.setItem(SETUP_DONE_KEY, "true");
-        window.localStorage.removeItem("healthyup:newUser");
-      } catch (err){
-        console.error(err);
+        await missionApi?.generate?.();
+      } catch (e) {
+        console.error(e);
       }
-      setSetupDone(true);
-      return [];
+      queryClient.invalidateQueries({ queryKey: ['healthProfile'] });
+      queryClient.invalidateQueries({ queryKey: ['missions'] });
+      queryClient.invalidateQueries({ queryKey: ['weeklyProgress'] });
+      localStorage.setItem(SETUP_DONE_KEY, "true");
+      localStorage.removeItem("healthyup:newUser");
+      setShowSetupModal(false);
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -391,11 +281,8 @@ export default function Dashboard() {
   const circumference   = 2 * Math.PI * 56;
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)]">
-      <Navbar />
-
-      <main className="lg:ml-72 pb-20 lg:pb-0">
-        <div className="p-6 lg:p-8 max-w-7xl mx-auto">
+    <>
+      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
 
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -682,7 +569,6 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-      </main>
 
       {/* Weight Input Modal */}
       <WeightInputModal
@@ -700,6 +586,6 @@ export default function Dashboard() {
         initialTarget={targetWeight}
         onConfirm={handleSetupConfirm}
       />
-    </div>
+    </>
   );
 }

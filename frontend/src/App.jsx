@@ -16,6 +16,7 @@ const ResetPasswordOtp = lazy(() => import('./pages/ResetPasswordOtp'));
 const ResetPasswordBaru = lazy(() => import('./pages/ResetPasswordBaru'));
 
 // User Pages
+import UserLayout from './components/layouts/UserLayout';
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Tugas = lazy(() => import('./pages/Tugas'));
 const Hadiah = lazy(() => import('./pages/Hadiah'));
@@ -90,39 +91,18 @@ function App() {
               </PublicRoute>
             }
           />
-
           <Route
-            path='/dashboard'
             element={
               <PrivateRoute allowedRoles={['user']}>
-                <Dashboard />
+                <UserLayout />
               </PrivateRoute>
             }
-          />
-          <Route
-            path='/tugas'
-            element={
-              <PrivateRoute allowedRoles={['user']}>
-                <Tugas />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path='/hadiah'
-            element={
-              <PrivateRoute allowedRoles={['user']}>
-                <Hadiah />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path='/profil'
-            element={
-              <PrivateRoute allowedRoles={['user']}>
-                <Profil />
-              </PrivateRoute>
-            }
-          />
+          >
+            <Route path='/dashboard' element={<Dashboard />} />
+            <Route path='/tugas' element={<Tugas />} />
+            <Route path='/hadiah' element={<Hadiah />} />
+            <Route path='/profil' element={<Profil />} />
+          </Route>
 
           <Route
             path='/admin'

@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Dashboard from '../src/pages/Dashboard';
 import * as AuthContextModule from '../src/context/AuthContext';
+import { wrapWithQueryClient } from './testQueryClient';
 
 // Mock ui/logo and ui/streak to avoid import issues
 vi.mock('../src/components/ui/logo', () => ({ default: () => <span>HealthyUp</span> }));
@@ -41,9 +42,11 @@ const renderDashboard = () => {
     isLoading: false,
   });
   return render(
-    <MemoryRouter initialEntries={['/dashboard']}>
-      <Dashboard />
-    </MemoryRouter>
+    wrapWithQueryClient(
+      <MemoryRouter initialEntries={['/dashboard']}>
+        <Dashboard />
+      </MemoryRouter>
+    )
   );
 };
 
