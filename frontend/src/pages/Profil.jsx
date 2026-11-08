@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -22,6 +22,7 @@ import WeightInputModal from '../components/WeightInputModal';
 import Streak from '../components/ui/streak';
 import { authApi, userApi, healthApi } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 const MONTHS = [
   'Jan',
@@ -53,30 +54,60 @@ const PAD_X = 20;
 const MAX_PROFILE_PHOTO_SIZE = 3 * 1024 * 1024;
 
 export default function Profile() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { setUser } = useAuth();
-
-  const [user, setProfileUser] = useState({
-    name: '',
-    email: '',
-    joinDate: '',
-    level: 1,
-    title: 'Pemula',
-    avatar: '',
-    streak: 0,
-    experiencePoints: 0,
-    rewardPoints: 0,
-    badges: [],
-  });
   const [profileError, setProfileError] = useState('');
-  const [isProfileLoading, setIsProfileLoading] = useState(true);
-
-  const [caloriesBurnedThisWeek, setCaloriesBurnedThisWeek] = useState(0);
-
-  // Struktur tiap item: { id, date (ISO string), weight (number), note (string) }
-  const [weightLog, setWeightLog] = useState([]);
-
   const [chartPeriod, setChartPeriod] = useState('mingguan');
+
+  const { data: rawUser, isLoading: isProfileLoading } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: async () => {
+      const res = await userApi.getMe();
+      return res.data?.user;
+    },
+  });
+
+  const user = {
+    name: rawUser?.username || '',
+    email: rawUser?.email || '',
+    joinDate: '',
+    level: rawUser?.level ?? 1,
+    title: titleCase(rawUser?.rankTitle),
+    avatar: rawUser?.profilePicture || '/profile/avatar.png',
+    streak: rawUser?.streakCount ?? 0,
+    experiencePoints: rawUser?.experiencePoints ?? 0,
+    rewardPoints: rawUser?.rewardPoints ?? 0,
+    badges: rawUser?.badges ?? [],
+  };
+
+  const { data: caloriesData } = useQuery({
+    queryKey: ['calorieLogs'],
+    queryFn: async () => {
+      const res = await healthApi.getCalorieLogs();
+      return res.data || {};
+    },
+  });
+
+  const caloriesBurnedThisWeek = caloriesData?.weeklyBurnedFromLog || 0;
+
+  const { data: weightLog = [] } = useQuery({
+    queryKey: ['weightLogs', chartPeriod],
+    queryFn: async () => {
+      const range = chartPeriod === 'mingguan' ? 'week' : 'month';
+      const resLogs = await healthApi.getWeightLogs(range);
+      const rawLogs = resLogs.data?.weightLogs || [];
+      return rawLogs
+        .filter((log) => log.weight > 0)
+        .map((log) => ({
+          id: log.id || Math.random().toString(),
+          date: log.loggedAt || log.date,
+          weight: log.weight,
+          note: log.note || '',
+        }));
+    },
+  });
+
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -87,98 +118,6 @@ export default function Profile() {
   const [selectedPicture, setSelectedPicture] = useState(null);
   const [selectedPicturePreview, setSelectedPicturePreview] = useState('');
   const [pictureError, setPictureError] = useState('');
-
-  useEffect(() => {
-    let ignore = false;
-
-    const loadProfile = async () => {
-      setIsProfileLoading(true);
-      setProfileError('');
-      try {
-        const res = await userApi.getMe();
-        const backendUser = res.data.user;
-        if (ignore) return;
-
-        setProfileUser({
-          name: backendUser.username || '',
-          email: backendUser.email || '',
-          joinDate: '',
-          level: backendUser.level ?? 1,
-          title: titleCase(backendUser.rankTitle),
-          avatar: backendUser.profilePicture || '/profile/avatar.png',
-          streak: backendUser.streakCount ?? 0,
-          experiencePoints: backendUser.experiencePoints ?? 0,
-          rewardPoints: backendUser.rewardPoints ?? 0,
-          badges: backendUser.badges ?? [],
-        });
-        setUser({
-          username: backendUser.username,
-          email: backendUser.email,
-        });
-      } catch (err) {
-        if (ignore) return;
-        setProfileError(err.message || 'Gagal memuat profil.');
-      } finally {
-        if (!ignore) setIsProfileLoading(false);
-      }
-    };
-
-    const loadCalorieLogs = async () => {
-      try {
-        const res = await healthApi.getCalorieLogs();
-        if (ignore) return;
-
-        // backend returns: { status, data: { weeklyBurnedFromLog, dailyLogs } }
-        const dataKalori = res.data || {};
-
-        setCaloriesBurnedThisWeek(dataKalori.weeklyBurnedFromLog || 0);
-      } catch (err) {
-        if (!ignore) console.error('Gagal memuat data kalori:', err);
-      }
-    };
-
-    loadCalorieLogs();
-
-    loadProfile();
-    return () => {
-      ignore = true;
-    };
-  }, [setUser]);
-
-  useEffect(() => {
-    let ignore = false;
-
-    const loadWeightLogs = async () => {
-      try {
-        // Tentukan parameter range berdasarkan state chartPeriod
-        const range = chartPeriod === 'mingguan' ? 'week' : 'month';
-
-        // Memanggil API dengan parameter range yang dinamis
-        const resLogs = await healthApi.getWeightLogs(range);
-        const rawLogs = resLogs.data?.weightLogs || [];
-
-        if (ignore) return;
-
-        const fetchedLogs = rawLogs
-          .filter((log) => log.weight > 0)
-          .map((log) => ({
-            id: log.id || Math.random().toString(),
-            date: log.loggedAt || log.date,
-            weight: log.weight,
-            note: log.note || '',
-          }));
-
-        setWeightLog(fetchedLogs);
-      } catch (logErr) {
-        if (!ignore) console.error('Gagal memuat riwayat berat badan:', logErr);
-      }
-    };
-
-    loadWeightLogs();
-    return () => {
-      ignore = true;
-    };
-  }, [chartPeriod]);
 
   const hasLog = weightLog.length > 0;
   const latestEntry = hasLog ? weightLog[weightLog.length - 1] : null;
@@ -297,13 +236,10 @@ export default function Profile() {
     setPictureError('');
 
     try {
-      const res = await userApi.updatePicture(selectedPicture);
-      const updatedUser = res.data.user;
-      setProfileUser((prev) => ({
-        ...prev,
-        name: updatedUser.username || prev.name,
-        avatar: updatedUser.profilePicture || prev.avatar,
-      }));
+      await userApi.updatePicture(selectedPicture);
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      closePictureModal();
+
       closePictureModal();
     } catch (err) {
       setPictureError(err.message || 'Gagal memperbarui foto profil.');
@@ -312,65 +248,23 @@ export default function Profile() {
     }
   };
 
-  const handleWeightSuccess = async (value, note) => {
+  const handleWeightSuccess = async (value) => {
     try {
       const payload = { weight: value };
-
       await healthApi.createWeightLog(payload);
-
-      const range = chartPeriod === 'mingguan' ? 'week' : 'month';
-      const resLogs = await healthApi.getWeightLogs(range);
-      const rawLogs = resLogs.data?.weightLogs || [];
-
-      const fetchedLogs = rawLogs
-        .filter((log) => log.weight > 0)
-        .map((log) => ({
-          id: log.id || Math.random().toString(),
-          date: log.loggedAt || log.date,
-          weight: log.weight,
-          note: log.note || (log.id === resLogs.data?.weightLogs?.slice(-1)?.[0]?.id ? (note ?? '') : ''),
-        }));
-
-      setWeightLog(fetchedLogs);
-
-      try {
-        const now = new Date();
-        const jan1 = new Date(now.getFullYear(), 0, 1);
-        const week = Math.ceil(((now - jan1) / 86400000 + jan1.getDay() + 1) / 7);
-        const thisWeekKey = `${now.getFullYear()}-W${String(week).padStart(2, '0')}`;
-        const stored = JSON.parse(window.localStorage.getItem('healthyup:weightLog')) ?? {};
-        window.localStorage.setItem(
-          'healthyup:weightLog',
-          JSON.stringify({
-            ...stored,
-            currentWeight: value,
-            previousWeight: currentWeight || value,
-            lastLoggedDate: thisWeekKey,
-          }),
-        );
-      } catch {
-        // ignore storage error
-      }
-
+      queryClient.invalidateQueries({ queryKey: ['weightLogs'] });
       setShowWeightModal(false);
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
     } catch (error) {
       console.error('Gagal mencatat berat badan:', error);
-      setProfileError(
-        error.message ||
-          'Gagal mencatat berat badan ke server. Silakan coba lagi.',
-      );
-      setShowWeightModal(false);
+      setProfileError('Gagal menyimpan catatan berat badan.');
     }
   };
 
   return (
-    <div className='min-h-screen bg-[var(--color-bg)]'>
-      <Navbar />
-
-      <main className='lg:ml-72 pb-20 lg:pb-0'>
-        <div className='p-6 lg:p-8 max-w-6xl mx-auto'>
+    <>
+      <div className='p-6 lg:p-8 max-w-6xl mx-auto'>
           {/* Toast sukses */}
           {showSuccess && (
             <div className='fixed top-6 right-6 z-50 flex items-center gap-3 bg-white border border-green-200 shadow-lg rounded-2xl px-5 py-4'>
@@ -716,7 +610,6 @@ export default function Profile() {
             </div>
           </div>
         </div>
-      </main>
 
       {/* Weight Input Modal */}
       <WeightInputModal
@@ -839,9 +732,9 @@ export default function Profile() {
               </div>
 
               <p className='text-sm text-[#4a5568] font-jakarta leading-relaxed mb-6'>
-                Apakah Anda yakin ingin menghapus akun ini? Seluruh data
-                profil, riwayat berat badan, misi, lencana, dan poin hadiah Anda
-                akan dihapus secara permanen dan tidak dapat dipulihkan.
+                Apakah Anda yakin ingin menghapus akun ini? Seluruh data profil,
+                riwayat berat badan, misi, lencana, dan poin hadiah Anda akan
+                dihapus secara permanen dan tidak dapat dipulihkan.
               </p>
 
               <div className='flex gap-3 justify-end'>
@@ -876,6 +769,6 @@ export default function Profile() {
           </div>,
           document.body,
         )}
-    </div>
+    </>
   );
 }

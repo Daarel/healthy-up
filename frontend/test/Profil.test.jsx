@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import Profile from '../src/pages/Profil';
 import * as AuthContextModule from '../src/context/AuthContext';
 import { authApi, userApi } from '../src/lib/api';
+import { wrapWithQueryClient } from './testQueryClient';
 
 vi.mock('../src/components/ui/streak', () => ({ default: ({ count }) => <span>{count} Streak</span> }));
 vi.mock('../src/lib/api', () => ({
@@ -47,6 +48,11 @@ vi.mock('../src/lib/api', () => ({
     }),
     deleteMe: vi.fn().mockResolvedValue({ status: 'success' }),
   },
+  healthApi: {
+    getCalorieLogs: vi.fn().mockResolvedValue({ data: { weeklyBurnedFromLog: 0, dailyLogs: [] } }),
+    getWeightLogs: vi.fn().mockResolvedValue({ data: { weightLogs: [] } }),
+    createWeightLog: vi.fn().mockResolvedValue({}),
+  },
 }));
 
 const renderProfil = () => {
@@ -56,9 +62,11 @@ const renderProfil = () => {
     isLoading: false,
   });
   return render(
-    <MemoryRouter initialEntries={['/profil']}>
-      <Profile />
-    </MemoryRouter>
+    wrapWithQueryClient(
+      <MemoryRouter initialEntries={['/profil']}>
+        <Profile />
+      </MemoryRouter>
+    )
   );
 };
 
